@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Getting explanations for AutoML Tables predictions | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Getting explanations for AutoML Tables predictions" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="…" />
+<meta property="og:description" content="…" />
+<link rel="canonical" href="https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta property="og:url" content="https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-04-17T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"…","dateModified":"2020-04-17T00:00:00-05:00","datePublished":"2020-04-17T00:00:00-05:00","headline":"Getting explanations for AutoML Tables predictions","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html"},"url":"https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/fastpages/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/fastpages/feed.xml" title="Amy on GCP" /><link rel="shortcut icon" type="image/x-icon" href="/fastpages/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Getting explanations for AutoML Tables predictions | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Getting explanations for AutoML Tables predictions" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="…" />
+<meta property="og:description" content="…" />
+<link rel="canonical" href="https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta property="og:url" content="https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-04-17T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"…","dateModified":"2020-04-17T00:00:00-05:00","datePublished":"2020-04-17T00:00:00-05:00","headline":"Getting explanations for AutoML Tables predictions","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html"},"url":"https://amygdala.github.io/fastpages/jupyter/2020/04/17/automl_tables_xai.html","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
+<link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/fastpages/feed.xml" title="Amy on GCP" />
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head><body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/fastpages/">Amy on GCP</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/fastpages/about/">About Me</a><a class="page-link" href="/fastpages/search/">Search</a><a class="page-link" href="/fastpages/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Getting explanations for AutoML Tables predictions</h1><p class="page-description">...</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-04-17T00:00:00-05:00" itemprop="datePublished">
+        Apr 17, 2020
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      12 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i> 
+      
+        <a class="category-tags-link" href="/fastpages/categories/#jupyter">jupyter</a>
+        
+      
+      </p>
+    
+
+    
+      
+        <div class="pb-5 d-flex flex-wrap flex-justify-end">
+          <div class="px-2">
+
+    <a href="https://github.com/amygdala/fastpages/tree/master/_notebooks/2020-04-17-automl_tables_xai.ipynb" role="button" target="_blank">
+<img class="notebook-badge-image" src="/fastpages/assets/badges/github.svg" alt="View On GitHub">
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://mybinder.org/v2/gh/amygdala/fastpages/master?filepath=_notebooks%2F2020-04-17-automl_tables_xai.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/fastpages/assets/badges/binder.svg" alt="Open In Binder"/>
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://colab.research.google.com/github/amygdala/fastpages/blob/master/_notebooks/2020-04-17-automl_tables_xai.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/fastpages/assets/badges/colab.svg" alt="Open In Colab"/>
+    </a>
+</div>
+        </div>
+      </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#Introduction">Introduction </a></li>
+<li class="toc-entry toc-h2"><a href="#Before-you-begin">Before you begin </a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#Do-some-imports">Do some imports </a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#Create-a-dataset,-and-import-data">Create a dataset, and import data </a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#Update-the-dataset-schema">Update the dataset schema </a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#Train-a-custom-model-on-the-dataset">Train a custom model on the dataset </a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#Get-the-status-of-your-training-job">Get the status of your training job </a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#Get-information-about-your-trained-custom-model">Get information about your trained custom model </a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#See-your-model's-evaluation-metrics">See your model&#39;s evaluation metrics </a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#Use-your-trained-model-to-make-predictions-and-see-explanations-of-the-results">Use your trained model to make predictions and see explanations of the results </a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#Deploy-your-model-and-get-predictions-+-explanations">Deploy your model and get predictions + explanations </a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#Summary">Summary </a></li>
+<li class="toc-entry toc-h2"><a href="#Appendix:-running-this-notebook-on-colab-(or-locally)">Appendix: running this notebook on colab (or locally) </a></li>
+</ul><!--
+#################################################
+### THIS FILE WAS AUTOGENERATED! DO NOT EDIT! ###
+#################################################
+# file to edit: _notebooks/2020-04-17-automl_tables_xai.ipynb
+-->
+
+<div class="container" id="notebook-container">
+        
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Introduction">
+<a class="anchor" href="#Introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction<a class="anchor-link" href="#Introduction"> </a>
+</h2>
+<p>Google Cloud’s <a href="https://cloud.google.com/automl-tables/docs/">AutoML Tables</a> lets you automatically build and deploy state-of-the-art machine learning models using your own structured data.</p>
+<p>AutoML Tables now has an easier-to-use <a href="https://googleapis.dev/python/automl/latest/gapic/v1beta1/tables.html">Tables-specific Python client library</a>, 
+as well as a new ability to <strong>explain</strong> online prediction results— called <em>local feature importance</em>—  which gives visibility into how the features in a specific prediction request informed the resulting prediction.</p>
+<p>In this notebook, we'll create a custom Tables model to predict duration of London bike rentals given information about local weather as well as info about the rental trip.
+We'll walk through examples of using the Tables client libraries for creating a dataset, training a custom model, deploying the model, and using it to make predictions; and show how you can programmatically request local feature importance information.</p>
+<p>We recommend running this notebook using <a href="https://cloud.google.com/ai-platform-notebooks/">AI Platform Notebooks</a>.
+If you want to run the notebook on <a href="https://colab.research.google.com/">colab</a> (or locally), it's possible, but you'll need to do a bit more setup.  See the Appendix section of this notebook for details.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Before-you-begin">
+<a class="anchor" href="#Before-you-begin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Before you begin<a class="anchor-link" href="#Before-you-begin"> </a>
+</h2>
+<p>Follow the <a href="https://cloud.google.com/automl-tables/docs/">AutoML Tables documentation</a> to:</p>
+<ul>
+<li>
+<a href="https://console.cloud.google.com/cloud-resource-manager">Select or create a GCP project</a>.</li>
+<li>
+<a href="https://cloud.google.com/billing/docs/how-to/modify-project">Make sure that billing is enabled</a> for your project</li>
+<li>Enable the <a href="https://console.cloud.google.com/flows/enableapi?apiid=storage-component.googleapis.com,automl.googleapis.com,storage-api.googleapis.com">Cloud AutoML and Storage APIs</a>.</li>
+<li>(Recommended) Create an <a href="https://cloud.google.com/ai-platform-notebooks/">AI Platform Notebook</a> instance and upload this notebook to it.</li>
+</ul>
+<p>(See also the <a href="https://cloud.google.com/automl-tables/docs/quickstart">Quickstart guide</a> for a getting-started walkthrough on AutoML Tables).</p>
+<p>Then, install the AutoML Python client libraries into your notebook environment:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip3 install -U google-cloud-automl
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>You may need to <strong>restart your notebook kernel</strong> after running the above to pick up the installation.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Enter your GCP project ID in the cell below, then run the cell.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">PROJECT_ID</span> <span class="o">=</span> <span class="s2">"&lt;your-project-id&gt;"</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Do-some-imports">
+<a class="anchor" href="#Do-some-imports" aria-hidden="true"><span class="octicon octicon-link"></span></a>Do some imports<a class="anchor-link" href="#Do-some-imports"> </a>
+</h3>
+<p>Next, import some libraries and set some variables.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">google.api_core.client_options</span> <span class="kn">import</span> <span class="n">ClientOptions</span>
+<span class="kn">from</span> <span class="nn">google.cloud</span> <span class="kn">import</span> <span class="n">automl_v1beta1</span> <span class="k">as</span> <span class="n">automl</span>
+<span class="kn">import</span> <span class="nn">google.cloud.automl_v1beta1.proto.data_types_pb2</span> <span class="k">as</span> <span class="nn">data_types</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">REGION</span> <span class="o">=</span> <span class="s1">'us-central1'</span>
+<span class="n">DATASET_NAME</span> <span class="o">=</span> <span class="s1">'bikes-weather'</span>
+<span class="n">BIGQUERY_PROJECT_ID</span> <span class="o">=</span> <span class="s1">'aju-dev-demos'</span>
+<span class="n">DATASET_ID</span> <span class="o">=</span> <span class="s1">'london_bikes_weather'</span>
+<span class="n">TABLE_ID</span> <span class="o">=</span> <span class="s1">'bikes_weather'</span>
+<span class="n">IMPORT_URI</span> <span class="o">=</span> <span class="s1">'bq://</span><span class="si">%s</span><span class="s1">.</span><span class="si">%s</span><span class="s1">.</span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="n">BIGQUERY_PROJECT_ID</span><span class="p">,</span> <span class="n">DATASET_ID</span><span class="p">,</span> <span class="n">TABLE_ID</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">IMPORT_URI</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">DATASET_NAME</span> <span class="o">=</span> <span class="s1">'bikes_weather'</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Create-a-dataset,-and-import-data">
+<a class="anchor" href="#Create-a-dataset,-and-import-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Create a dataset, and import data<a class="anchor-link" href="#Create-a-dataset,-and-import-data"> </a>
+</h2>
+<p>Next, we'll define some utility functions to create a dataset, and to import data into a dataset.  The <code>client.import_data()</code> call returns an operation <em>future</em> that can be used to check for completion synchronously or asynchronously— in this case we wait synchronously.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">create_dataset</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">dataset_display_name</span><span class="p">):</span>
+    <span class="sd">"""Create a dataset."""</span>
+
+    <span class="c1"># Create a dataset with the given display name</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">dataset_display_name</span><span class="p">)</span>
+
+    <span class="c1"># Display the dataset information.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Dataset name: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Dataset id: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Dataset display name: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">display_name</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Dataset metadata:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">tables_dataset_metadata</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Dataset example count: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">example_count</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Dataset create time:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">seconds: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">create_time</span><span class="o">.</span><span class="n">seconds</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">nanos: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">create_time</span><span class="o">.</span><span class="n">nanos</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">dataset</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">import_data</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">dataset_display_name</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="sd">"""Import structured data."""</span>
+ 
+    <span class="n">response</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'bq'</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">import_data</span><span class="p">(</span>
+            <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span> <span class="n">bigquery_input_uri</span><span class="o">=</span><span class="n">path</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Get the multiple Google Cloud Storage URIs.</span>
+        <span class="n">input_uris</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">import_data</span><span class="p">(</span>
+            <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+            <span class="n">gcs_input_uris</span><span class="o">=</span><span class="n">input_uris</span>
+        <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Processing import..."</span><span class="p">)</span>
+    <span class="c1"># synchronous check of operation status.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Data imported. </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">result</span><span class="p">()))</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next, we'll create the <code>client</code> object that we'll use for all our operations.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">client</span> <span class="o">=</span> <span class="n">automl</span><span class="o">.</span><span class="n">TablesClient</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">PROJECT_ID</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">REGION</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Create the Tables <em>dataset</em>:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">create_dataset</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>... and then import data from the BigQuery table into the dataset. The import command will take a while to run. <strong>Wait until it has returned</strong> before proceeding.  You can also check import status in the <a href="https://console.cloud.google.com/automl-tables/datasets">Cloud Console</a>.</p>
+<p>(Note that if you run this notebook multiple times, you will get an error if you try to create multiple datasets with the same name. However, you can train multiple models against the same dataset.)</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">import_data</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">,</span> <span class="n">IMPORT_URI</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Update-the-dataset-schema">
+<a class="anchor" href="#Update-the-dataset-schema" aria-hidden="true"><span class="octicon octicon-link"></span></a>Update the dataset schema<a class="anchor-link" href="#Update-the-dataset-schema"> </a>
+</h3>
+<p>Now we'll define utility functions to update dataset and column information.  We need these to set the dataset's <em>target column</em> (the field we'll train our model to predict) and to change the <em>types</em> of some of the columns. AutoML Tables is pretty good at inferring reasonable column types based on input, but in our case, there are some columns (like bike station IDs) that we want to treat as <em>Categorical</em> instead of <em>Numeric</em>.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">update_column_spec</span><span class="p">(</span><span class="n">client</span><span class="p">,</span>
+                       <span class="n">dataset_display_name</span><span class="p">,</span>
+                       <span class="n">column_spec_display_name</span><span class="p">,</span>
+                       <span class="n">type_code</span><span class="p">,</span>
+                       <span class="n">nullable</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">"""Update column spec."""</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">update_column_spec</span><span class="p">(</span>
+        <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+        <span class="n">column_spec_display_name</span><span class="o">=</span><span class="n">column_spec_display_name</span><span class="p">,</span>
+        <span class="n">type_code</span><span class="o">=</span><span class="n">type_code</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="n">nullable</span>
+    <span class="p">)</span>
+
+    <span class="c1"># synchronous check of operation status.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Table spec updated. </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+    
+<span class="k">def</span> <span class="nf">update_dataset</span><span class="p">(</span><span class="n">client</span><span class="p">,</span>
+                   <span class="n">dataset_display_name</span><span class="p">,</span>
+                   <span class="n">target_column_spec_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">time_column_spec_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">test_train_column_spec_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">"""Update dataset."""</span>
+
+    <span class="k">if</span> <span class="n">target_column_spec_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">set_target_column</span><span class="p">(</span>
+            <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+            <span class="n">column_spec_display_name</span><span class="o">=</span><span class="n">target_column_spec_name</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Target column updated. </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">time_column_spec_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">set_time_column</span><span class="p">(</span>
+            <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+            <span class="n">column_spec_display_name</span><span class="o">=</span><span class="n">time_column_spec_name</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Time column updated. </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>    
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">list_column_specs</span><span class="p">(</span><span class="n">client</span><span class="p">,</span>
+                      <span class="n">dataset_display_name</span><span class="p">,</span>
+                      <span class="n">filter_</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">"""List all column specs."""</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># List all the table specs in the dataset by applying filter.</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">list_column_specs</span><span class="p">(</span>
+        <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span> <span class="n">filter_</span><span class="o">=</span><span class="n">filter_</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"List of column specs:"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">column_spec</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+        <span class="c1"># Display the column_spec information.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Column spec name: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_spec</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Column spec id: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_spec</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Column spec display name: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_spec</span><span class="o">.</span><span class="n">display_name</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Column spec data type: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_spec</span><span class="o">.</span><span class="n">data_type</span><span class="p">))</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column_spec</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Update the dataset to indicate that the target column is <code>duration</code>.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">update_dataset</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">,</span>
+                <span class="n">target_column_spec_name</span><span class="o">=</span><span class="s1">'duration'</span><span class="p">,</span>
+<span class="c1">#                 time_column_spec_name='ts'</span>
+              <span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now we'll update some of the column types.  You can list their default specs first if you like:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">list_column_specs</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>... and now we'll update them to the types we want:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">update_column_spec</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">,</span>
+                   <span class="s1">'end_station_id'</span><span class="p">,</span>
+                    <span class="s1">'CATEGORY'</span><span class="p">)</span>
+<span class="n">update_column_spec</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">,</span>
+                   <span class="s1">'start_station_id'</span><span class="p">,</span>
+                    <span class="s1">'CATEGORY'</span><span class="p">)</span>
+<span class="n">update_column_spec</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">,</span>
+                   <span class="s1">'loc_cross'</span><span class="p">,</span>
+                   <span class="s1">'CATEGORY'</span><span class="p">)</span>
+<span class="n">update_column_spec</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">,</span>
+                   <span class="s1">'bike_id'</span><span class="p">,</span>
+                   <span class="s1">'CATEGORY'</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>You can view the results in the <a href="https://console.cloud.google.com/automl-tables/datasets">Cloud Console</a>. Note that useful stats are generated for each column. You can also run the <code>list_column_specs()</code> function again to see the new config.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># list_column_specs(client, DATASET_NAME)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Train-a-custom-model-on-the-dataset">
+<a class="anchor" href="#Train-a-custom-model-on-the-dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>Train a custom model on the dataset<a class="anchor-link" href="#Train-a-custom-model-on-the-dataset"> </a>
+</h2>
+<p>Now we're ready to train a model on the dataset. We'll need to generate a unique name for the model, which we'll do by appending a timestamp, in case you want to run this notebook multiple times. The <code>1000</code> arg in the <code>create_model()</code> call specifies to budget 1 hour of training time.</p>
+<p>In the <code>create_model()</code> utility function below, we may not want to block on the result, since total job time can be multiple hours. If you want the function to block until training is complete, uncomment the last line of the function below.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="n">MODEL_NAME</span> <span class="o">=</span> <span class="s1">'bwmodel_'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'MODEL_NAME: </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span> <span class="n">MODEL_NAME</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="n">client</span><span class="p">,</span>
+                 <span class="n">dataset_display_name</span><span class="p">,</span>
+                 <span class="n">model_display_name</span><span class="p">,</span>
+                 <span class="n">train_budget_milli_node_hours</span><span class="p">,</span>
+                 <span class="n">include_column_spec_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">exclude_column_spec_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">"""Create a model."""</span>
+ 
+    <span class="c1"># Create a model with the model metadata in the region.</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_model</span><span class="p">(</span>
+        <span class="n">model_display_name</span><span class="p">,</span>
+        <span class="n">train_budget_milli_node_hours</span><span class="o">=</span><span class="n">train_budget_milli_node_hours</span><span class="p">,</span>
+        <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+        <span class="n">include_column_spec_names</span><span class="o">=</span><span class="n">include_column_spec_names</span><span class="p">,</span>
+        <span class="n">exclude_column_spec_names</span><span class="o">=</span><span class="n">exclude_column_spec_names</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Training model..."</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Training operation: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">operation</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Training operation name: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">operation</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+    <span class="c1"># uncomment the following to block until training is finished.</span>
+    <span class="c1"># print("Training completed: {}".format(response.result()))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">create_model</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">DATASET_NAME</span><span class="p">,</span> <span class="n">MODEL_NAME</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Get-the-status-of-your-training-job">
+<a class="anchor" href="#Get-the-status-of-your-training-job" aria-hidden="true"><span class="octicon octicon-link"></span></a>Get the status of your training job<a class="anchor-link" href="#Get-the-status-of-your-training-job"> </a>
+</h3>
+<p>Edit the following call to <strong>set <code>OP_NAME</code> to the "training operation name"</strong> listed in the output of <code>create_model()</code> above.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">OP_NAME</span> <span class="o">=</span> <span class="s1">'YOUR TRAINING OPERATION NAME'</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_operation_status</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">operation_full_id</span><span class="p">):</span>
+    <span class="sd">"""Get operation status."""</span>
+ 
+    <span class="c1"># Get the latest state of a long-running operation.</span>
+    <span class="n">op</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">auto_ml_client</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">_operations_client</span><span class="o">.</span><span class="n">get_operation</span><span class="p">(</span>
+        <span class="n">operation_full_id</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Operation status: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">op</span><span class="p">))</span>
+    <span class="kn">from</span> <span class="nn">google.cloud.automl</span> <span class="kn">import</span> <span class="n">types</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">OperationMetadata</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">ParseFromString</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The training job may take several hours. You can check on its status in the Cloud Console UI. You can also monitor it via the <code>get_operation_status()</code> call below. (Make sure you've edited the OP_NAME variable value above). You'll see: <code>done: true</code> in the output when it's finished.</p>
+<p>(Note: if you should lose your notebook kernel context while the training job is running, you can continue the rest of the notebook later with a new kernel: just make note of the <code>MODEL_NAME</code>. You can find that information in the Cloud Console as well).</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">get_operation_status</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">OP_NAME</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Get-information-about-your-trained-custom-model">
+<a class="anchor" href="#Get-information-about-your-trained-custom-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Get information about your trained custom model<a class="anchor-link" href="#Get-information-about-your-trained-custom-model"> </a>
+</h2>
+<p>Once it has been created, you can get information about a specific model. (While the training job is still running, you'll just get a <code>not found</code> message.)</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">google.cloud.automl_v1beta1</span> <span class="kn">import</span> <span class="n">enums</span>
+<span class="kn">from</span> <span class="nn">google.api_core</span> <span class="kn">import</span> <span class="n">exceptions</span>
+
+<span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">model_display_name</span><span class="p">):</span>
+    <span class="sd">"""Get model details."""</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFound</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Model </span><span class="si">%s</span><span class="s2"> not found."</span> <span class="o">%</span> <span class="n">model_display_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="c1"># Get complete detail of the model.a</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">)</span>
+
+    <span class="c1"># Retrieve deployment state.</span>
+    <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">deployment_state</span> <span class="o">==</span> <span class="n">enums</span><span class="o">.</span><span class="n">Model</span><span class="o">.</span><span class="n">DeploymentState</span><span class="o">.</span><span class="n">DEPLOYED</span><span class="p">:</span>
+        <span class="n">deployment_state</span> <span class="o">=</span> <span class="s2">"deployed"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">deployment_state</span> <span class="o">=</span> <span class="s2">"undeployed"</span>
+
+    <span class="c1"># get features of top global importance</span>
+    <span class="n">feat_list</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">column</span><span class="o">.</span><span class="n">feature_importance</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">column_display_name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">tables_model_metadata</span><span class="o">.</span><span class="n">tables_model_column_info</span>
+    <span class="p">]</span>
+    <span class="n">feat_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">feat_to_show</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">feat_list</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">feat_to_show</span> <span class="o">=</span> <span class="mi">10</span>
+
+    <span class="c1"># Display the model information.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Model name: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Model id: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Model display name: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">display_name</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Features of top importance:"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">feat_list</span><span class="p">[:</span><span class="n">feat_to_show</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Model create time:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">seconds: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">create_time</span><span class="o">.</span><span class="n">seconds</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">nanos: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">create_time</span><span class="o">.</span><span class="n">nanos</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Model deployment state: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">deployment_state</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">feat_list</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Don't proceed with the rest of the notebook until the model has finished training</strong> and the following <code>get_model()</code> call returns model information rather than '<code>not found</code>'.</p>
+<p>Once the training job has finished, we can get information about the model, including information about which input features proved to be the most <strong>important globally</strong> (that is, across the full training dataset).</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">global_feat_importance</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MODEL_NAME</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can graph the global feature importance values to get a visualization of which inputs were most important in training the model. (The Cloud Console UI also displays such a graph).</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">global_feat_importance</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">global_feat_importance</span><span class="p">))</span>
+<span class="n">x</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">y_pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">y_pos</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">y_pos</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>    
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="See-your-model's-evaluation-metrics">
+<a class="anchor" href="#See-your-model's-evaluation-metrics" aria-hidden="true"><span class="octicon octicon-link"></span></a>See your model's evaluation metrics<a class="anchor-link" href="#See-your-model's-evaluation-metrics"> </a>
+</h3>
+<p>We can also get model evaluation information once the model is trained.  The available metrics depend upon which optimization objective you used.  In this example, we used the default, <strong>RMSE</strong>.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">evals</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">list_model_evaluations</span><span class="p">(</span><span class="n">model_display_name</span><span class="o">=</span><span class="n">MODEL_NAME</span><span class="p">)</span>
+<span class="nb">list</span><span class="p">(</span><span class="n">evals</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">regression_evaluation_metrics</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Use-your-trained-model-to-make-predictions-and-see-explanations-of-the-results">
+<a class="anchor" href="#Use-your-trained-model-to-make-predictions-and-see-explanations-of-the-results" aria-hidden="true"><span class="octicon octicon-link"></span></a>Use your trained model to make predictions and see explanations of the results<a class="anchor-link" href="#Use-your-trained-model-to-make-predictions-and-see-explanations-of-the-results"> </a>
+</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Deploy-your-model-and-get-predictions-+-explanations">
+<a class="anchor" href="#Deploy-your-model-and-get-predictions-+-explanations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Deploy your model and get predictions + explanations<a class="anchor-link" href="#Deploy-your-model-and-get-predictions-+-explanations"> </a>
+</h3>
+<p>Once your training job has finished, you can use your model to make predictions.</p>
+<p>With <em>online prediction</em>, you can now request <strong>explanations</strong> of the results, in the form of <strong><a href="https://cloud.google.com/automl-tables/docs/features#feat-imp">local feature importance</a></strong> calculations on the inputs. Local feature importance gives you visibility into how the features in a specific prediction request informed the resulting prediction.</p>
+<p>To get online predictions, we first need to <strong>deploy</strong> the model.</p>
+<p>Note: see the <a href="https://cloud.google.com/automl-tables/docs/">documentation</a> for other prediction options including the ability to <a href="link_to_blog_post">export</a> your custom model and run it in a container anywhere.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">deploy_model</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">model_display_name</span><span class="p">):</span>
+    <span class="sd">"""Deploy model."""</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">deploy_model</span><span class="p">(</span><span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">)</span>
+    <span class="c1"># synchronous check of operation status.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Model deployed. </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">result</span><span class="p">()))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>It will take a while to deploy the model. <strong>Wait for the <code>deploy_model()</code> call to finish</strong> before proceeding with the rest of the notebook cells. You can track status in the Console UI as well.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">deploy_model</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MODEL_NAME</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Once the model is deployed, you can access it via the UI, or the API, to make online prediction requests.  These can include a request for <a href="https://cloud.google.com/automl-tables/docs/features#feat-imp">local feature importance</a> calculations on the inputs, a newly-launched feature. Local feature importance gives you visibility into how the features in a specific prediction request informed the resulting prediction.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">client</span><span class="p">,</span>
+            <span class="n">model_display_name</span><span class="p">,</span>
+            <span class="n">inputs</span><span class="p">,</span>
+            <span class="n">feature_importance</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">"""Make a prediction."""</span>
+
+    <span class="k">if</span> <span class="n">feature_importance</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+            <span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">,</span>
+            <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span>
+            <span class="n">feature_importance</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+            <span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">,</span>
+            <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Prediction results:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">inputs</span> <span class="o">=</span>  <span class="p">{</span>
+      <span class="s2">"bike_id"</span><span class="p">:</span> <span class="s2">"5373"</span><span class="p">,</span>
+      <span class="s2">"day_of_week"</span><span class="p">:</span> <span class="s2">"3"</span><span class="p">,</span>
+      <span class="s2">"end_latitude"</span><span class="p">:</span> <span class="mf">51.52059681</span><span class="p">,</span>
+      <span class="s2">"end_longitude"</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.116688468</span><span class="p">,</span>
+      <span class="s2">"end_station_id"</span><span class="p">:</span> <span class="s2">"68"</span><span class="p">,</span>
+      <span class="s2">"euclidean"</span><span class="p">:</span> <span class="mf">3589.5146210024977</span><span class="p">,</span>
+      <span class="s2">"loc_cross"</span><span class="p">:</span> <span class="s2">"POINT(-0.07 51.52)POINT(-0.12 51.52)"</span><span class="p">,</span>
+      <span class="s2">"max"</span><span class="p">:</span> <span class="mf">44.6</span><span class="p">,</span>
+      <span class="s2">"min"</span><span class="p">:</span> <span class="mf">34.0</span><span class="p">,</span>
+      <span class="s2">"prcp"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+      <span class="s2">"ts"</span><span class="p">:</span> <span class="s2">"1480407420"</span><span class="p">,</span>
+      <span class="s2">"start_latitude"</span><span class="p">:</span> <span class="mf">51.52388</span><span class="p">,</span>
+      <span class="s2">"start_longitude"</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.065076</span><span class="p">,</span>
+      <span class="s2">"start_station_id"</span><span class="p">:</span> <span class="s2">"445"</span><span class="p">,</span>
+      <span class="s2">"temp"</span><span class="p">:</span> <span class="mf">38.2</span><span class="p">,</span>
+      <span class="s2">"dewp"</span><span class="p">:</span> <span class="mf">28.6</span>
+    <span class="p">}</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Try running the prediction request first without, then with, the local feature importance calculations, to see the difference in the information that is returned. (The actual duration— that we're predicting— is 1200.)</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">predict</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MODEL_NAME</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">feature_importance</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">response</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MODEL_NAME</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">feature_importance</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can plot the local feature importance values to get a visualization of which fields were most and least important for this particular prediction.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">col_info</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tables</span><span class="o">.</span><span class="n">tables_model_column_info</span>
+<span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">col_info</span><span class="p">:</span>
+  <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">column_display_name</span><span class="p">)</span>
+  <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">feature_importance</span><span class="p">)</span>
+<span class="n">y_pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">y_pos</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">y_pos</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>    
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>You can see a similar graphic in the <a href="https://pantheon.corp.google.com/automl-tables/">Cloud Console Tables UI</a> when you submit an <code>ONLINE PREDICTION</code> and tick the "Generate feature importance" checkbox.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The local feature importance calculations are specific to a given input instance.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Summary">
+<a class="anchor" href="#Summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Summary<a class="anchor-link" href="#Summary"> </a>
+</h2>
+<p>In this notebook, we showed how you can use the AutoML Tables client library to create datasets, train models, and get predictions from your trained model— and in particular, how you can get explanations of the results along with the predictions.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Appendix:-running-this-notebook-on-colab-(or-locally)">
+<a class="anchor" href="#Appendix:-running-this-notebook-on-colab-(or-locally)" aria-hidden="true"><span class="octicon octicon-link"></span></a>Appendix: running this notebook on colab (or locally)<a class="anchor-link" href="#Appendix:-running-this-notebook-on-colab-(or-locally)"> </a>
+</h2>
+<p>It's possible to run this example on <a href="https://colab.research.google.com/">colab</a>, but it takes a bit more setup. Do the following before you create the Tables client object or call the API.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><a href="https://cloud.google.com/iam/docs/creating-managing-service-accounts">Create a service account</a>, give it the necessary <em>roles</em> (e.g., AutoML Admin) and <a href="https://cloud.google.com/iam/docs/creating-managing-service-account-keys">download a json credentials file</a> for the service account.  <strong>Upload</strong> the credentials file to the colab file system.</p>
+<p>Then, <strong>edit</strong> the following to point to that file, and run the cell:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">env</span> GOOGLE_APPLICATION_CREDENTIALS /content/your-credentials-file.json
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Your Tables API calls should now be properly authenticated.  If you lose the colab runtime, you'll need to re-upload the file and re-set the environment variable.</p>
+<p>If you're running the notebook locally, point the <code>GOOGLE_APPLICATION_CREDENTIALS</code> environment variable to the service account credentials file before starting the notebook, e.g.:</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">GOOGLE_APPLICATION_CREDENTIALS</span><span class="o">=</span>/path/to/your-credentials-file.json
+</pre></div>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<hr>
+<p>Copyright 2019 Google LLC</p>
+<p>Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+
+<pre><code> http://www.apache.org/licenses/LICENSE-2.0
+
+</code></pre>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+
+</div>
+</div>
+</div>
+</div>
+
+
+
+  </div><!-- from https://github.com/utterance/utterances -->
+<script src="https://utteranc.es/client.js"
+        repo="amygdala/fastpages"
+        issue-term="title"
+        label="blogpost-comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script><a class="u-url" href="/fastpages/jupyter/2020/04/17/automl_tables_xai.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/fastpages/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/fastpages/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/fastpages/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Using Google Cloud Platform</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/fastpages/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/fastpages/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
