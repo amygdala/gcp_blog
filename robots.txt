@@ -1,0 +1,1 @@
+Sitemap: https://amygdala.github.io/fastpages/sitemap.xml
