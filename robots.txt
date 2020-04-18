@@ -1,1 +1,1 @@
-Sitemap: https://amygdala.github.io/fastpages/sitemap.xml
+Sitemap: https://amygdala.github.io/gcp_blog/sitemap.xml
