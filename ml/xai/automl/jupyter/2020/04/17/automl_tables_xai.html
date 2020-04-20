@@ -7,30 +7,30 @@
 <meta name="generator" content="Jekyll v4.0.0" />
 <meta property="og:title" content="Getting explanations for AutoML Tables predictions" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="This notebook shows how to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
-<meta property="og:description" content="This notebook shows how to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
-<link rel="canonical" href="https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html" />
-<meta property="og:url" content="https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta name="description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<meta property="og:description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html" />
 <meta property="og:site_name" content="Amy on GCP" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2020-04-17T00:00:00-05:00" />
 <script type="application/ld+json">
-{"description":"This notebook shows how to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.","@type":"BlogPosting","headline":"Getting explanations for AutoML Tables predictions","url":"https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html","datePublished":"2020-04-17T00:00:00-05:00","dateModified":"2020-04-17T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html"},"@context":"https://schema.org"}</script>
+{"description":"How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.","@type":"BlogPosting","headline":"Getting explanations for AutoML Tables predictions","url":"https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html","datePublished":"2020-04-17T00:00:00-05:00","dateModified":"2020-04-17T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html"},"@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><link rel="shortcut icon" type="image/x-icon" href="/gcp_blog/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Getting explanations for AutoML Tables predictions | Amy on GCP</title>
 <meta name="generator" content="Jekyll v4.0.0" />
 <meta property="og:title" content="Getting explanations for AutoML Tables predictions" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="This notebook shows how to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
-<meta property="og:description" content="This notebook shows how to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
-<link rel="canonical" href="https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html" />
-<meta property="og:url" content="https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta name="description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<meta property="og:description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html" />
 <meta property="og:site_name" content="Amy on GCP" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2020-04-17T00:00:00-05:00" />
 <script type="application/ld+json">
-{"description":"This notebook shows how to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.","@type":"BlogPosting","headline":"Getting explanations for AutoML Tables predictions","url":"https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html","datePublished":"2020-04-17T00:00:00-05:00","dateModified":"2020-04-17T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html"},"@context":"https://schema.org"}</script>
+{"description":"How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.","@type":"BlogPosting","headline":"Getting explanations for AutoML Tables predictions","url":"https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html","datePublished":"2020-04-17T00:00:00-05:00","dateModified":"2020-04-17T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html"},"@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
 <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
@@ -85,7 +85,7 @@ window.onload = wrap_img;
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Getting explanations for AutoML Tables predictions</h1><p class="page-description">This notebook shows how to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-04-17T00:00:00-05:00" itemprop="datePublished">
+    <h1 class="post-title p-name" itemprop="name headline">Getting explanations for AutoML Tables predictions</h1><p class="page-description">How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-04-17T00:00:00-05:00" itemprop="datePublished">
         Apr 17, 2020
       </time>
        • <span class="read-time" title="Estimated read time">
@@ -97,6 +97,15 @@ window.onload = wrap_img;
 
     
       <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i> 
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#ml">ml</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#xai">xai</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#automl">automl</a>
+        &nbsp;
       
         <a class="category-tags-link" href="/gcp_blog/categories/#jupyter">jupyter</a>
         
@@ -183,7 +192,8 @@ window.onload = wrap_img;
 <p>Google Cloud’s <a href="https://cloud.google.com/automl-tables/docs/">AutoML Tables</a> lets you automatically build and deploy state-of-the-art machine learning models using your own structured data.</p>
 <p>AutoML Tables now has an easier-to-use <a href="https://googleapis.dev/python/automl/latest/gapic/v1beta1/tables.html">Tables-specific Python client library</a>, 
 as well as a new ability to <strong>explain</strong> online prediction results— called <em>local feature importance</em>—  which gives visibility into how the features in a specific prediction request informed the resulting prediction.  You can read more about explainable AI for Tables in <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">this blog post</a>.</p>
-<p>In this notebook, we'll create a custom Tables model to predict duration of London bike rentals given information about local weather as well as info about the rental trip.
+<p>The source for this post is a Jupyter notebook. 
+ In this notebook, we'll create a custom Tables model to predict duration of London bike rentals given information about local weather as well as info about the rental trip.
 We'll walk through examples of using the Tables client libraries for creating a dataset, training a custom model, deploying the model, and using it to make predictions; and show how you can programmatically request local feature importance information.</p>
 <p>We recommend running this notebook using <a href="https://cloud.google.com/ai-platform-notebooks/">AI Platform Notebooks</a>.
 If you want to run the notebook on <a href="https://colab.research.google.com/">colab</a> (or locally), it's possible, but you'll need to do a bit more setup.  See the Appendix section of this notebook for details.</p>
@@ -1346,7 +1356,7 @@ If you want to run the notebook on <a href="https://colab.research.google.com/">
         theme="github-light"
         crossorigin="anonymous"
         async>
-</script><a class="u-url" href="/gcp_blog/jupyter/2020/04/17/automl_tables_xai.html" hidden></a>
+</script><a class="u-url" href="/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html" hidden></a>
 </article>
       </div>
     </main><footer class="site-footer h-card">
