@@ -55,7 +55,7 @@ show_image: false
 show_tags: true
 
 # Add your Google Analytics ID here if you have one and want to use it
-google_analytics:
+google_analytics: UA-164080601-1
 
 exclude:
   - docker-compose.yml
@@ -71,6 +71,7 @@ default_badges:
   github: true
   binder: true
   colab: true
+  caip: true
 
 # Everything below here should be left alone. Modifications may break fastpages
 future: true
