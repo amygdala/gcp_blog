@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
+<meta property="og:description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-04-22T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow","@type":"BlogPosting","headline":"Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html","datePublished":"2020-04-22T00:00:00-05:00","dateModified":"2020-04-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+<link rel="shortcut icon" type="image/x-icon" href="/gcp_blog/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
+<meta property="og:description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-04-22T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow","@type":"BlogPosting","headline":"Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html","datePublished":"2020-04-22T00:00:00-05:00","dateModified":"2020-04-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
+<link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head><body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/gcp_blog/">Amy on GCP</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/gcp_blog/about/">About Me</a><a class="page-link" href="/gcp_blog/search/">Search</a><a class="page-link" href="/gcp_blog/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines</h1><p class="page-description">An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-04-22T00:00:00-05:00" itemprop="datePublished">
+        Apr 22, 2020
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      19 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i>
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#ml">ml</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#kfp">kfp</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#automl">automl</a>
+        
+      
+      </p>
+    
+
+    </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul class="section-nav">
+<li class="toc-entry toc-h1"><a href="#automl-tables-end-to-end-workflow-on-cloud-ai-platform-pipelines">AutoML Tables: end-to-end workflow on Cloud AI Platform Pipelines</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#introduction">Introduction</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#about-the-example-dataset-and-scenario">About the example dataset and scenario</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#using-cloud-ai-platform-pipelines-or-kubeflow-pipelines-to-orchestrate-a-tables-workflow">Using Cloud AI Platform Pipelines or Kubeflow Pipelines to orchestrate a Tables workflow</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#install-a-cloud-ai-platform-pipelines-cluster">Install a Cloud AI Platform Pipelines cluster</a></li>
+<li class="toc-entry toc-h3"><a href="#or-install-kubeflow-to-use-kubeflow-pipelines">Or, install Kubeflow to use Kubeflow Pipelines</a></li>
+<li class="toc-entry toc-h3"><a href="#upload-and-run-the-tables-end-to-end-pipeline">Upload and run the Tables end-to-end Pipeline</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#the-steps-executed-by-the-pipeline">The steps executed by the pipeline</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#create-a-tables-dataset-and-adjust-its-schema">Create a Tables dataset and adjust its schema</a></li>
+<li class="toc-entry toc-h3"><a href="#train-a-custom-model-on-the-dataset">Train a custom model on the dataset</a></li>
+<li class="toc-entry toc-h3"><a href="#view-model-search-information-via-cloud-logging">View model search information via Cloud Logging</a></li>
+<li class="toc-entry toc-h3"><a href="#custom-model-evaluation">Custom model evaluation</a></li>
+<li class="toc-entry toc-h3"><a href="#conditional-model-deployment">(Conditional) model deployment</a></li>
+<li class="toc-entry toc-h3"><a href="#putting-it-together-the-full-pipeline-execution">Putting it together: The full pipeline execution</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#getting-explanations-about-your-models-predictions">Getting explanations about your model’s predictions</a></li>
+<li class="toc-entry toc-h2"><a href="#the-automl-tables-ui-in-the-cloud-console">The AutoML Tables UI in the Cloud Console</a></li>
+<li class="toc-entry toc-h2"><a href="#export-the-trained-model-and-serve-it-on-a-gke-cluster">Export the trained model and serve it on a GKE cluster</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#send-prediction-requests-to-your-deployed-model-service">Send prediction requests to your deployed model service</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#a-deeper-dive-into-the-pipeline-code">A deeper dive into the pipeline code</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#using-the-lightweight-python-components--functionality-to-build-pipeline-steps">Using the ‘lightweight python components’  functionality to build pipeline steps</a></li>
+<li class="toc-entry toc-h3"><a href="#specifying-the-tables-pipeline">Specifying the Tables pipeline</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul><h1 id="automl-tables-end-to-end-workflow-on-cloud-ai-platform-pipelines">
+<a class="anchor" href="#automl-tables-end-to-end-workflow-on-cloud-ai-platform-pipelines" aria-hidden="true"><span class="octicon octicon-link"></span></a>AutoML Tables: end-to-end workflow on Cloud AI Platform Pipelines</h1>
+
+<h2 id="introduction">
+<a class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p><a href="https://cloud.google.com/automl-tables/docs/">AutoML Tables</a> lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data.</p>
+
+<p>A number of new AutoML Tables features have been released recently. These include:</p>
+<ul>
+  <li>An improved <a href="https://googleapis.dev/python/automl/latest/gapic/v1beta1/tables.html">Python client library</a>
+</li>
+  <li>The ability to obtain <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">explanations</a> for your online predictions</li>
+  <li>The ability to <a href="http://amygdala.github.io/automl/ml/2019/12/05/automl_tables_export.html">export your model and serve it in a container</a> anywhere</li>
+  <li>The ability to view model search progress and final model hyperparameters <a href="https://cloud.google.com/automl-tables/docs/logging">in Cloud Logging</a>
+</li>
+</ul>
+
+<p>This post gives a tour of some of these new features via a <a href="%20https://cloud.google.com/blog/products/ai-machine-learning/introducing-cloud-ai-platform-pipelines">Cloud AI Platform Pipelines</a> example, that shows end-to-end management of an AutoML Tables workflow.</p>
+
+<p>The example pipeline <a href="https://cloud.google.com/automl-tables/docs/import#create">creates a <em>dataset</em></a>, <a href="https://cloud.google.com/automl-tables/docs/import#import-data">imports</a> data into the dataset from a <a href="https://cloud.google.com/bigquery">BigQuery</a> <em>view</em>, and <a href="https://cloud.google.com/automl-tables/docs/train">trains</a> a custom model on that data. Then, it fetches <a href="https://cloud.google.com/automl-tables/docs/evaluate">evaluation and metrics</a> information about the trained model, and based on specified criteria about model quality, uses that information to automatically determine whether to <a href="https://cloud.google.com/automl-tables/docs/predict">deploy</a> the model for online prediction.   Once the model is deployed, you can make prediction requests, and optionally obtain prediction <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">explanations</a> as well as the prediction result.
+In addition, the example shows how to scalably <strong><em>serve</em></strong> your exported trained model from your Cloud AI Platform Pipelines installation for prediction requests.</p>
+
+<p>You can manage all the parts of this workflow from the <a href="https://console.cloud.google.com/automl-tables">Tables UI</a> as well, or programmatically via a <a href="https://github.com/amygdala/code-snippets/blob/master/ml/automl/tables/xai/automl_tables_xai.ipynb">notebook</a> or script.  But specifying this process as a workflow has some advantages: the workflow becomes reliable and repeatable, and Pipelines makes it easy to monitor the results and schedule recurring runs.
+For example, if your dataset is updated regularly—say once a day— you could schedule a workflow to run daily, each day building a model that trains on an updated dataset.
+(With a bit more work, you could also set up event-based triggering pipeline runs, for example <a href="http://amygdala.github.io/kubeflow/ml/2019/08/22/remote-deploy.html#using-cloud-function-triggers">when new data is added</a> to a <a href="https://cloud.google.com/storage">Google Cloud Storage</a> bucket.)</p>
+
+<h3 id="about-the-example-dataset-and-scenario">
+<a class="anchor" href="#about-the-example-dataset-and-scenario" aria-hidden="true"><span class="octicon octicon-link"></span></a>About the example dataset and scenario</h3>
+
+<p>The <a href="https://cloud.google.com/bigquery/public-data/">Cloud Public Datasets Program</a> makes available public datasets that are useful for experimenting with machine learning. For our examples, we’ll use data that is essentially a join of two public datasets stored in <a href="https://cloud.google.com/bigquery/">BigQuery</a>: <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=london_bicycles&amp;page=dataset">London Bike rentals</a> and <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=noaa_gsod&amp;page=dataset">NOAA weather data</a>, with some additional processing to clean up outliers and derive additional GIS and day-of-week fields.  Using this dataset, we’ll build a regression model to predict the <em>duration</em> of a bike rental based on information about the start and end rental stations, the day of the week, the weather on that day, and other data. If we were running a bike rental company, we could use these predictions—and their <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">explanations</a>—to help us anticipate demand and even plan how to stock each location.
+While we’re using bike and weather data here, you can use AutoML Tables for tasks as varied as asset valuations, fraud detection, credit risk analysis, customer retention prediction, analyzing item layouts in stores, and many more.</p>
+
+<h2 id="using-cloud-ai-platform-pipelines-or-kubeflow-pipelines-to-orchestrate-a-tables-workflow">
+<a class="anchor" href="#using-cloud-ai-platform-pipelines-or-kubeflow-pipelines-to-orchestrate-a-tables-workflow" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using Cloud AI Platform Pipelines or Kubeflow Pipelines to orchestrate a Tables workflow</h2>
+
+<p>You can run this example via a <a href="https://cloud.google.com/ai-platform/pipelines/docs">Cloud AI Platform Pipelines</a> installation, or via <a href="https://kubeflow.org/">Kubeflow Pipelines</a> on a <a href="https://www.kubeflow.org/docs/gke/deploy/">Kubeflow on GKE</a> installation.  <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-cloud-ai-platform-pipelines">Cloud AI Platform Pipelines</a> was recently launched in Beta. Slightly different variants of the pipeline specification are required depending upon which you’re using. (It would be possible to run the example on other Kubeflow installations too, but that would require additional credentials setup not covered in this tutorial).</p>
+
+<h3 id="install-a-cloud-ai-platform-pipelines-cluster">
+<a class="anchor" href="#install-a-cloud-ai-platform-pipelines-cluster" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install a Cloud AI Platform Pipelines cluster</h3>
+
+<p>You can create an AI Platform Pipelines installation with a few clicks.  Access AI Platform Pipelines by visiting the <a href="https://console.cloud.google.com/ai-platform/pipelines/clusters">AI Platform Panel</a> in the <a href="https://console.cloud.google.com">Cloud Console</a>.</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/sA17BykJuzF.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/sA17BykJuzF.png" width="90%"></a>
+<figcaption><br><i>Create a new Pipelines instance.</i></figcaption>
+</figure>
+
+<p>See the <a href="https://cloud.google.com/ai-platform/pipelines/docs">documentation</a> for more detail.</p>
+
+<p>(You can also do this installation <a href="https://github.com/kubeflow/pipelines/tree/master/manifests/gcp_marketplace">from the command line</a> onto an existing GKE cluster if you prefer. If you do, for consistency with the UI installation, create the GKE cluster with <code class="highlighter-rouge">--scopes cloud-platform</code>).</p>
+
+<h3 id="or-install-kubeflow-to-use-kubeflow-pipelines">
+<a class="anchor" href="#or-install-kubeflow-to-use-kubeflow-pipelines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Or, install Kubeflow to use Kubeflow Pipelines</h3>
+
+<p>You can also run this example from a <a href="https://www.kubeflow.org/">Kubeflow</a> installation. For the example to work out of the box, you’ll need a Kubeflow on <a href="https://cloud.google.com/kubernetes-engine">GKE</a> installation, set up to use <a href="https://cloud.google.com/iap">IAP</a>.  An easy way to do this is via the Kubeflow <a href="https://deploy.kubeflow.cloud/#/deploy">‘click to deploy’ web app</a>, or you can follow the command-line instructions <a href="https://www.kubeflow.org/docs/gke/deploy/deploy-cli/">here</a>.</p>
+
+<h3 id="upload-and-run-the-tables-end-to-end-pipeline">
+<a class="anchor" href="#upload-and-run-the-tables-end-to-end-pipeline" aria-hidden="true"><span class="octicon octicon-link"></span></a>Upload and run the Tables end-to-end Pipeline</h3>
+
+<p>Once a Pipelines installation is running, we can upload the example AutoML Tables pipeline. 
+Click on <strong>Pipelines</strong> in the left nav bar of the Pipelines Dashboard.  Click on <strong>Upload Pipeline</strong>.</p>
+
+<ul>
+  <li>For Cloud AI Platform Pipelines, upload <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/tables_pipeline_caip.py.tar.gz?raw=true"><code class="highlighter-rouge">tables_pipeline_caip.py.tar.gz</code></a>.  This archive points to the compiled version of <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/tables_pipeline_caip.py">this pipeline</a>, specified and compiled using the <a href="https://www.kubeflow.org/docs/pipelines/sdk/install-sdk/">Kubeflow Pipelines SDK</a>.</li>
+  <li>For Kubeflow Pipelines on a Kubeflow installation, upload  <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/tables_pipeline_kf.py.tar.gz?raw=true"><code class="highlighter-rouge">tables_pipeline_kf.py.tar.gz</code></a>.  This archive points to the compiled version of <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/tables_pipeline_kf.py">this pipeline</a>. <br>
+<strong>To run this example on a KF installation, you will need to give the <code class="highlighter-rouge">&lt;deployment-name&gt;-user@&lt;project-id&gt;.iam.gserviceaccount.com</code> service account <code class="highlighter-rouge">AutoML Admin</code> privileges</strong>.</li>
+</ul>
+
+<blockquote>
+  <p>Note: The difference between the two pipelines relates to how GCP authentication is handled.  For the Kubeflow pipeline, we’ve added <code class="highlighter-rouge">.apply(gcp.use_gcp_secret('user-gcp-sa'))</code> annotations to the pipeline steps. This tells the pipeline to use the mounted <em>secret</em>—set up during the installation process— that provides GCP account credentials.  With the Cloud AI Platform Pipelines installation, the GKE cluster nodes have been set up to use the <code class="highlighter-rouge">cloud-platform</code> scope. With recent Kubeflow releases, use of the mounted secret is no longer necessary, but we include both versions for compatibility.</p>
+</blockquote>
+
+<p>The uploaded pipeline graph will look similar to this:</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-17%20at%204.27.41%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-17%20at%204.27.41%20PM.png" width="40%"></a>
+<figcaption><br><i>The uploaded Tables 'end-to-end' pipeline.</i></figcaption>
+</figure>
+
+<p>Click the <strong>+Create Run</strong> button to run the pipeline.  You will need to fill in some pipeline parameters.
+Specifically, replace <code class="highlighter-rouge">YOUR_PROJECT_HERE</code> with the name of your project; replace <code class="highlighter-rouge">YOUR_DATASET_NAME</code> with the name you want to give your new dataset (make it unique, and use letters, numbers and underscores up to 32 characters); and replace <code class="highlighter-rouge">YOUR_BUCKET_NAME</code> with the name of a <a href="https://cloud.google.com/storage">GCS bucket</a>.  This bucket should be in the <a href="https://cloud.google.com/automl-tables/docs/locations#buckets">same <em>region</em></a> as that specified by the <code class="highlighter-rouge">gcp_region</code> parameter. E.g., if you keep the default <code class="highlighter-rouge">us-central1</code> region, your bucket should also be a <em>regional</em> (not multi-regional) bucket in the <code class="highlighter-rouge">us-central1</code> region. ++double check that this is necessary.++</p>
+
+<p>If you want to schedule a recurrent set of runs, you can do that instead.  If your data is in <a href="https://cloud.google.com/bigquery">BigQuery</a>— as is the case for this example pipeline— and has a temporal aspect, you could define a <em>view</em> to reflect that, e.g. to return data from a window over the last <code class="highlighter-rouge">N</code> days or hours.  Then, the AutoML pipeline could specify ingestion of data from that view, grabbing an updated data window each time the pipeline is run, and building a new model based on that updated window.</p>
+
+<h2 id="the-steps-executed-by-the-pipeline">
+<a class="anchor" href="#the-steps-executed-by-the-pipeline" aria-hidden="true"><span class="octicon octicon-link"></span></a>The steps executed by the pipeline</h2>
+
+<p>The example pipeline <a href="https://cloud.google.com/automl-tables/docs/import#create">creates a <em>dataset</em></a>, <a href="https://cloud.google.com/automl-tables/docs/import#import-data">imports</a> data into the dataset from a <a href="https://cloud.google.com/bigquery">BigQuery</a> <em>view</em>, and <a href="https://cloud.google.com/automl-tables/docs/train">trains</a> a custom model on that data. Then, it fetches <a href="https://cloud.google.com/automl-tables/docs/evaluate">evaluation and metrics</a> information about the trained model, and based on specified criteria about model quality, uses that information to automatically determine whether to <a href="https://cloud.google.com/automl-tables/docs/predict">deploy</a> the model for online prediction. We’ll take a closer look at each of the pipeline steps, and how they’re implemented.</p>
+
+<h3 id="create-a-tables-dataset-and-adjust-its-schema">
+<a class="anchor" href="#create-a-tables-dataset-and-adjust-its-schema" aria-hidden="true"><span class="octicon octicon-link"></span></a>Create a Tables dataset and adjust its schema</h3>
+
+<p>This pipeline creates a new Tables <em>dataset</em>, and ingests data from a <a href="https://cloud.google.com/bigquery">BigQuery</a> table for the “bikes and weather” dataset described above. These actions are implemented by the first two steps in the pipeline  (the <code class="highlighter-rouge">automl-create-dataset-for-tables</code> and <code class="highlighter-rouge">automl-import-data-for-tables</code> steps).</p>
+
+<p>While we’re not showing it in this example, AutoML Tables supports ingestion from BigQuery <em>views</em> as well as tables.  This can be an easy way to do <strong><em>feature engineering</em></strong>: leverage BigQuery’s rich set of functions and operators to clean and transform your data before you ingest it.</p>
+
+<p>When the data is ingested, AutoML Tables infers the <em>data type</em> for each field (column).  In some cases, those inferred types may not be what you want.  For example, for our “bikes and weather” dataset, several ID fields (like the rental station IDs) are set by default to be numeric, but we want them treated as categorical when we train our model.  In addition, we want to treat the <code class="highlighter-rouge">loc_cross</code> strings as categorical rather than text.</p>
+
+<p>We make these adjustments programmatically, by defining a pipeline parameter that specifies the schema changes we want to make. Then, in the <code class="highlighter-rouge">automl-set-dataset-schema</code> pipeline step, for each indicated schema adjustment, we call <code class="highlighter-rouge">update_column_spec</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">client</span><span class="o">.</span><span class="n">update_column_spec</span><span class="p">(</span>
+          <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+          <span class="n">column_spec_display_name</span><span class="o">=</span><span class="n">column_spec_display_name</span><span class="p">,</span>
+          <span class="n">type_code</span><span class="o">=</span><span class="n">type_code</span><span class="p">,</span>
+          <span class="n">nullable</span><span class="o">=</span><span class="n">nullable</span>
+      <span class="p">)</span>
+</code></pre></div></div>
+
+<p>Before we can train the model, we also need to specify the <em>target</em> column— what we want our model to predict.  In this case, we’ll train the model to predict rental <em>duration</em>.  This is a numeric value, so we’ll be training a <a href="https://cloud.google.com/automl-tables/docs/problem-types#regression_problems">regression</a> model.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">client</span><span class="o">.</span><span class="n">set_target_column</span><span class="p">(</span>
+              <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+              <span class="n">column_spec_display_name</span><span class="o">=</span><span class="n">target_column_spec_name</span>
+          <span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="train-a-custom-model-on-the-dataset">
+<a class="anchor" href="#train-a-custom-model-on-the-dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>Train a custom model on the dataset</h3>
+
+<p>Once the dataset is defined and its schema set properly, the pipeline will train the model.  This happens in the <code class="highlighter-rouge">automl-create-model-for-tables</code> pipeline step. Via pipeline parameters, we can specify the training budget, the <em>optimization objective</em> (if not using the default), and can additionally specify which columns to include or exclude from the model inputs.</p>
+
+<p>You may want to specify a non-default optimization objective depending upon the characteristics of your dataset.  <a href="https://cloud.google.com/automl-tables/docs/train#opt-obj">This table</a> describes the available optimization objectives and when you might want to use them. For example, if you were training a classification model using an imbalanced dataset, you might want to specify use of AUC PR (<code class="highlighter-rouge">MAXIMIZE_AU_PRC</code>), which optimizes results for predictions for the less common class.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">client</span><span class="o">.</span><span class="n">create_model</span><span class="p">(</span>
+    <span class="n">model_display_name</span><span class="p">,</span>
+    <span class="n">train_budget_milli_node_hours</span><span class="o">=</span><span class="n">train_budget_milli_node_hours</span><span class="p">,</span>
+    <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+    <span class="n">optimization_objective</span><span class="o">=</span><span class="n">optimization_objective</span><span class="p">,</span>
+    <span class="n">include_column_spec_names</span><span class="o">=</span><span class="n">include_column_spec_names</span><span class="p">,</span>
+    <span class="n">exclude_column_spec_names</span><span class="o">=</span><span class="n">exclude_column_spec_names</span><span class="p">,</span>
+  <span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="view-model-search-information-via-cloud-logging">
+<a class="anchor" href="#view-model-search-information-via-cloud-logging" aria-hidden="true"><span class="octicon octicon-link"></span></a>View model search information via Cloud Logging</h3>
+
+<p>You can view details about an AutoML Tables model <a href="https://cloud.google.com/automl-tables/docs/logging">via Cloud Logging</a>. Using Logging, you can see the final model hyperparameters as well as the hyperparameters and object values used during model training and tuning.</p>
+
+<p>An easy way to access these logs is to go to the <a href="https://console.cloud.google.com/automl-tables">AutoML Tables page</a> in the Cloud Console.  Select the Models tab in the left navigation pane and click on the model you’re interested in.  Click the “Model” link to see the final hyperparameter logs.  To see the tuning trial hyperparameters, click the “Trials” link.</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.20.46%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.20.46%20PM.png" width="30%"></a>
+<figcaption><br><i>View a model's search logs from its evaluation information.</i></figcaption>
+</figure>
+
+<p>For example, here is a look at the Trials logs a custom model trained on the “bikes and weather” dataset, with one of the entries expanded in the logs:</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.23.00%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.23.00%20PM.png" width="90%"></a>
+<figcaption><br><i>The 'Trials' logs for a "bikes and weather" model</i></figcaption>
+</figure>
+
+<h3 id="custom-model-evaluation">
+<a class="anchor" href="#custom-model-evaluation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Custom model evaluation</h3>
+
+<p>Once your custom model has finished training, the pipeline moves on to its next step: model evaluation. We can access evaluation metrics via the API.  We’ll use this information to decide whether or not to deploy the model.</p>
+
+<p>These actions are factored into two steps. The process of fetching the evaluation information can be a general-purpose component (pipeline step) used in many situations; and then we’ll follow that with a more special-purpose step, that analyzes that information and uses it to decide whether or not to deploy the trained model.</p>
+
+<p>In the first of these pipeline steps— the <code class="highlighter-rouge">automl-eval-tables-model</code> step— we’ll retrieve the evaluation and <em>global feature importance</em> information.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">)</span>
+<span class="n">feat_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">column</span><span class="o">.</span><span class="n">feature_importance</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">column_display_name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">tables_model_metadata</span><span class="o">.</span><span class="n">tables_model_column_info</span><span class="p">]</span>
+<span class="n">evals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">list_model_evaluations</span><span class="p">(</span><span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">))</span>
+
+</code></pre></div></div>
+
+<p>AutoML Tables automatically computes global feature importance for a trained model. This shows, across the evaluation set, the average absolute attribution each feature receives. Higher values mean the feature generally has greater influence on the model’s predictions.
+This information is useful for debugging and improving your model. If a feature’s contribution is negligible—if it has a low value—you can simplify the model by excluding it from future training. 
+The pipeline step renders the global feature importance data as part of the pipeline run’s output:</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%201.22.42%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%201.22.42%20PM.png" width="50%"></a>
+<figcaption><br><i>Global feature importance for the model inputs, rendered by a Kubeflow Pipeline step.</i></figcaption>
+</figure>
+
+<p>For our example, based on the graphic above, we might try training a model without including <code class="highlighter-rouge">bike_id</code>.</p>
+
+<p>In the following pipeline step— the <code class="highlighter-rouge">automl-eval-metrics</code> step— the evaluation output from the previous step is grabbed as input, and parsed to extract metrics that we’ll use in conjunction with pipeline parameters to decide whether or not to deploy the model. One of the pipeline input parameters allows specification of metric thresholds. In this example, we’re training a regression model, and we’re specifying a <code class="highlighter-rouge">mean_absolute_error</code> (MAE) value as a threshold in the pipeline input parameters:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="s">"mean_absolute_error"</span><span class="p">:</span> <span class="mi">450</span><span class="p">}</span>
+</code></pre></div></div>
+
+<p>The pipeline step compares the model evaluation information to the given threshold constraints. In this case, if the MAE is &lt; <code class="highlighter-rouge">450</code>, the model will not be deployed. The pipeline step outputs that decision, and displays the evaluation information it’s using as part of the pipeline run’s output:</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.07.21%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.07.21%20PM.png" width="25%"></a>
+<figcaption><br><i>Information about a model's evaluation, rendered by a Kubeflow Pipeline step.</i></figcaption>
+</figure>
+
+<h3 id="conditional-model-deployment">
+<a class="anchor" href="#conditional-model-deployment" aria-hidden="true"><span class="octicon octicon-link"></span></a>(Conditional) model deployment</h3>
+
+<p>You can <em>deploy</em> any of your custom Tables models to make them accessible for online prediction requests. 
+The pipeline code uses a <em>conditional test</em> to determine whether or not to run the step that deploys the model, based on the output of the evaluation step described above:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span><span class="n">eval_metrics</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'deploy'</span><span class="p">]</span> <span class="o">==</span> <span class="bp">True</span><span class="p">):</span>
+  <span class="n">deploy_model</span> <span class="o">=</span> <span class="n">deploy_model_op</span><span class="p">(</span> <span class="o">...</span> <span class="p">)</span>
+</code></pre></div></div>
+
+<p>Only if the model meets the given criteria, will the deployment step (called <code class="highlighter-rouge">automl-deploy-tables-model</code>) be run, and the model be deployed automatically as part of the pipeline run:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">deploy_model</span><span class="p">(</span><span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>You can always deploy a model later if you like.</p>
+
+<h3 id="putting-it-together-the-full-pipeline-execution">
+<a class="anchor" href="#putting-it-together-the-full-pipeline-execution" aria-hidden="true"><span class="octicon octicon-link"></span></a>Putting it together: The full pipeline execution</h3>
+
+<p>The figure below shows the result of a pipeline run.  In this case, the conditional step was executed— based on the model evaluation metrics— and the trained model was deployed.<br>
+Via the UI, you can view outputs, logs for each step, run artifacts and lineage information, and more.  See <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-cloud-ai-platform-pipelines">this post</a> for more detail.</p>
+
+<p>++TODO: replace the following figure with something better++</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-17%20at%204.28.32%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-17%20at%204.28.32%20PM.png" width="40%"></a>
+<figcaption><br><i>Execution of a pipeline run. You can view outputs, logs for each step, run artifacts and lineage information, and more.</i></figcaption>
+</figure>
+
+<h2 id="getting-explanations-about-your-models-predictions">
+<a class="anchor" href="#getting-explanations-about-your-models-predictions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting explanations about your model’s predictions</h2>
+
+<p>Once a model is deployed, you can request predictions from that model.  You can additionally request <em>explanations for local feature importance</em>: a score showing how much (and in which direction) each feature influenced the prediction for a single example.  See <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">this blog post</a> for more information on how those values are calculated.</p>
+
+<p>Here is a <a href="https://github.com/amygdala/code-snippets/blob/master/ml/automl/tables/xai/automl_tables_xai.ipynb">notebook example</a> of how to request a prediction and its explanation using the Python client libraries.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">google.cloud</span> <span class="kn">import</span> <span class="n">automl_v1beta1</span> <span class="k">as</span> <span class="n">automl</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">automl</span><span class="o">.</span><span class="n">TablesClient</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">PROJECT_ID</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">REGION</span><span class="p">)</span>
+ 
+<span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+    <span class="n">model_display_name</span><span class="o">=</span><span class="n">model_display_name</span><span class="p">,</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span>
+    <span class="n">feature_importance</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>The prediction response will have a structure like <a href="https://gist.github.com/amygdala/c96d45bdf694737d77d91597ca3ef1f0">this</a>. (The notebook above shows how to visualize the local feature importance results using <code class="highlighter-rouge">matplotlib</code>.)</p>
+
+<p>It’s easy to explore local feature importance through the Cloud Console’s <a href="https://console.cloud.google.com/automl-tables">AutoML Tables UI </a>as well. After you deploy a model, go to the <strong>TEST &amp; USE</strong> tab of the Tables panel, select <strong>ONLINE PREDICTION</strong>, enter the field values for the prediction, and then check the <strong>Generate feature importance</strong> box at the bottom of the page. The result will show the feature importance values as well as the prediction.  This <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">blog post</a> gives some examples of how these explanations can be used to find potential issues with your data or help you better understand your problem domain.</p>
+
+<h2 id="the-automl-tables-ui-in-the-cloud-console">
+<a class="anchor" href="#the-automl-tables-ui-in-the-cloud-console" aria-hidden="true"><span class="octicon octicon-link"></span></a>The AutoML Tables UI in the Cloud Console</h2>
+
+<p>With this example we’ve focused on how you can automate a Tables workflow using Kubeflow pipelines and the Python client libraries.</p>
+
+<p>All of the pipeline steps can also be accomplished via the <a href="https://console.cloud.google.com/automl-tables">AutoML Tables UI</a> in the Cloud Console, including many useful visualizations, and other functionality not implemented by this example pipeline— such as the ability to export the model’s test set and prediction results to BigQuery for further analysis.</p>
+
+<h2 id="export-the-trained-model-and-serve-it-on-a-gke-cluster">
+<a class="anchor" href="#export-the-trained-model-and-serve-it-on-a-gke-cluster" aria-hidden="true"><span class="octicon octicon-link"></span></a>Export the trained model and serve it on a GKE cluster</h2>
+
+<p>Recently, Tables launched a feature to let you export your full custom model, packaged so that you can serve it via a Docker container. (Under the hood, it is using TensorFlow Serving). This lets you serve your models anywhere that you can run a container, including a GKE cluster.<br>
+This means that you can run a model serving service on your AI Platform Pipelines or Kubeflow installation, both of which run on GKE.</p>
+
+<p><a href="http://amygdala.github.io/automl/ml/2019/12/05/automl_tables_export.html">This blog post</a> walks through the steps to serve the exported model (in this case, using <a href="https://cloud.google.com/run">Cloud Run</a>).  Follow the instructions in the post through the “View information about your exported model in TensorBoard” <a href="http://amygdala.github.io/automl/ml/2019/12/05/automl_tables_export.html#view-information-about-your-exported-model-in-tensorboard">section</a>.
+Here, we’ll diverge from the rest of the post and create a GKE service instead.</p>
+
+<p>Make a copy of <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/deploy_model_for_tables/model_serve_template.yaml"><code class="highlighter-rouge">deploy_model_for_tables/model_serve_template.yaml</code></a> file and name it <code class="highlighter-rouge">model_serve.yaml</code>.  Edit this new file, <strong>replacing</strong> <code class="highlighter-rouge">MODEL_NAME</code> with some meaningful name for your model, <code class="highlighter-rouge">IMAGE_NAME</code> with the name of the container image you built (as described in the <a href="http://amygdala.github.io/automl/ml/2019/12/05/automl_tables_export.html">blog post</a>, and <code class="highlighter-rouge">NAMESPACE</code> with the namespace in which you want to run your service (e.g. <code class="highlighter-rouge">default</code>).</p>
+
+<p>Then, from the command line, run:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kubectl apply <span class="nt">-f</span> model_serve.yaml
+</code></pre></div></div>
+
+<p>to set up your model serving <em>service</em> and its underlying <em>deployment</em>. (Before you do that, make sure that kubectl is set to use your GKE cluster’s credentials.  One way to do that is to visit the <a href="https://console.cloud.google.com/kubernetes/list">GKE panel in the Cloud Console</a>, and click <strong>Connect</strong> for that cluster.)</p>
+
+<p>You can later take down the service and its deployment by running:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kubectl delete <span class="nt">-f</span> model_serve.yaml
+</code></pre></div></div>
+
+<h3 id="send-prediction-requests-to-your-deployed-model-service">
+<a class="anchor" href="#send-prediction-requests-to-your-deployed-model-service" aria-hidden="true"><span class="octicon octicon-link"></span></a>Send prediction requests to your deployed model service</h3>
+
+<p>Once your model serving service is deployed, you can send prediction requests to it.  Because we didn’t set up an external endpoint for our service in this simple example, we’ll connect to the service via port forwarding. 
+From the command line, run the following, <strong>replacing</strong> <code class="highlighter-rouge">&lt;your-model-name&gt;</code> with the value you replaced <code class="highlighter-rouge">MODEL_NAME</code> by, when creating your <code class="highlighter-rouge">yaml</code> file, and <code class="highlighter-rouge">&lt;service-namespace&gt;</code> with the namespace in which your service is running— the same namespace value you used in the yaml file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kubectl <span class="nt">-n</span> &lt;service-namespace&gt; port-forward svc/&lt;your-model-name&gt;  8080:80
+</code></pre></div></div>
+
+<p>Then, from the <code class="highlighter-rouge">deploy_model_for_tables</code> directory, send a prediction request to your service like this:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-X</span> POST <span class="nt">--data</span> @./instances.json http://localhost:8080/predict
+</code></pre></div></div>
+
+<p>You should see a result like this, with a prediction for each instance in the <code class="highlighter-rouge">instances.json</code> file:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span><span class="s2">"predictions"</span>: <span class="o">[</span>860.79833984375, 460.5323486328125, 1211.7664794921875]<span class="o">}</span>
+</code></pre></div></div>
+
+<p>(If you get an error, make sure you’re in the correct directory and see the <code class="highlighter-rouge">instances.json</code> file listed).</p>
+
+<blockquote>
+  <p><strong>Note</strong>: it would be possible to add this deployment step to the pipeline too.  (See <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/deploy_model_for_tables/exported_model_deploy.py"><code class="highlighter-rouge">deploy_model_for_tables/exported_model_deploy.py</code></a>).  However, the <a href="https://googleapis.dev/python/automl/latest/gapic/v1beta1/tables.html">Python client library</a> does not yet support the ‘export’ operation.  Once deployment is supported by the client library, this would be a natural addition to the workflow. While not tested, it should also be possible to do the export programmatically via the <a href="https://cloud.google.com/automl/docs/reference/rest/v1/projects.locations.models/export">REST API</a>.</p>
+</blockquote>
+
+<h2 id="a-deeper-dive-into-the-pipeline-code">
+<a class="anchor" href="#a-deeper-dive-into-the-pipeline-code" aria-hidden="true"><span class="octicon octicon-link"></span></a>A deeper dive into the pipeline code</h2>
+
+<p>The updated <a href="https://googleapis.dev/python/automl/latest/gapic/v1beta1/tables.html">Tables Python client library</a> makes it very straightforward to build the Pipelines components that support each stage of the workflow.
+Kubeflow Pipeline steps are container-based, so that any action you can support via a Docker container image can become a pipeline step. 
+That doesn’t mean that an end-user necessarily needs to have Docker installed.  For many straightforward cases, building your pipeline steps</p>
+
+<h3 id="using-the-lightweight-python-components--functionality-to-build-pipeline-steps">
+<a class="anchor" href="#using-the-lightweight-python-components--functionality-to-build-pipeline-steps" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using the ‘lightweight python components’  functionality to build pipeline steps</h3>
+
+<p>For most of the components in this example, we’re building them using the <a href="https://www.kubeflow.org/docs/pipelines/sdk/lightweight-python-components/">“lightweight python components”</a> functionality as shown in <a href="https://github.com/kubeflow/pipelines/blob/master/samples/tutorials/mnist/01_Lightweight_Python_Components.ipynb">this example notebook</a>, including compilation of the code into a component package.  This feature allows you to create components based on Python functions, building on an appropriate base image, so that you do not need to have docker installed or rebuild a container image each time your code changes.</p>
+
+<p>Each component’s python file includes a function definition, and then a <code class="highlighter-rouge">func_to_container_op</code> call, passing the function definition, to generate the component’s <code class="highlighter-rouge">yaml</code> package file.  As we’ll see below, these component package files make it very straightforward to put these steps together to form a pipeline.</p>
+
+<p>The <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/deploy_model_for_tables/tables_deploy_component.py"><code class="highlighter-rouge">deploy_model_for_tables/tables_deploy_component.py</code></a> file is representative.   It contains an <code class="highlighter-rouge">automl_deploy_tables_model</code> function definition.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def automl_deploy_tables_model(
+  gcp_project_id: str,
+  gcp_region: str,
+  model_display_name: str,
+  api_endpoint: str = None,
+  ) -&gt; NamedTuple('Outputs', [('model_display_name', str), ('status', str)]):
+...
+  return (model_display_name, status)
+
+</code></pre></div></div>
+
+<p>The function defines the component’s inputs and outputs, and this information will be used to support static checking when we compose these components to build the pipeline.</p>
+
+<p>To build the component <code class="highlighter-rouge">yaml</code> file corresponding to this function, we add the following to the components’ Python script, then can run <code class="highlighter-rouge">python &lt;filename&gt;.py</code> from the command line to generate it (you must have the Kubeflow Pipelines (KFP) sdk <a href="https://www.kubeflow.org/docs/pipelines/sdk/install-sdk/">installed</a>).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+	<span class="kn">import</span> <span class="nn">kfp</span>
+	<span class="n">kfp</span><span class="o">.</span><span class="n">components</span><span class="o">.</span><span class="n">func_to_container_op</span><span class="p">(</span>
+        <span class="n">automl_deploy_tables_model</span><span class="p">,</span> <span class="n">output_component_file</span><span class="o">=</span><span class="s">'tables_deploy_component.yaml'</span><span class="p">,</span> 
+        <span class="n">base_image</span><span class="o">=</span><span class="s">'python:3.7'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Whenever you change the python function definition, just recompile to regenerate the corresponding component file.</p>
+
+<h3 id="specifying-the-tables-pipeline">
+<a class="anchor" href="#specifying-the-tables-pipeline" aria-hidden="true"><span class="octicon octicon-link"></span></a>Specifying the Tables pipeline</h3>
+
+<p>With the components packaged into <code class="highlighter-rouge">yaml</code> files, it becomes very straightforward to specify a pipeline, such as <a href="https://github.com/amygdala/code-snippets/blob/tables_e2e/ml/automl/tables/kfp_e2e/tables_pipeline_caip.py"><code class="highlighter-rouge">tables_pipeline_caip.py</code></a>, that uses them.  Here, we’re just using the <code class="highlighter-rouge">load_component_from_file()</code> method, since the <code class="highlighter-rouge">yaml</code> files are all local (in the same repo).  However, there is also a <code class="highlighter-rouge">load_component_from_url()</code> method, which makes it easy to share components. (If your URL points to a file in GitHub, be sure to use raw mode).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">create_dataset_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_file</span><span class="p">(</span>
+  <span class="s">'./create_dataset_for_tables/tables_component.yaml'</span><span class="p">)</span>
+<span class="n">import_data_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_file</span><span class="p">(</span>
+  <span class="s">'./import_data_from_bigquery/tables_component.yaml'</span><span class="p">)</span>
+<span class="n">set_schema_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_file</span><span class="p">(</span>
+  <span class="s">'./import_data_from_bigquery/tables_schema_component.yaml'</span><span class="p">)</span>
+<span class="n">train_model_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_file</span><span class="p">(</span>
+    <span class="s">'./create_model_for_tables/tables_component.yaml'</span><span class="p">)</span>
+<span class="n">eval_model_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_file</span><span class="p">(</span>
+    <span class="s">'./create_model_for_tables/tables_eval_component.yaml'</span><span class="p">)</span>
+<span class="n">eval_metrics_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_file</span><span class="p">(</span>
+    <span class="s">'./create_model_for_tables/tables_eval_metrics_component.yaml'</span><span class="p">)</span>
+<span class="n">deploy_model_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_file</span><span class="p">(</span>
+    <span class="s">'./deploy_model_for_tables/tables_deploy_component.yaml'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Once all our pipeline ops (steps) are defined using the component definitions, then we can specify the pipeline by calling the constructors, e.g.:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="n">create_dataset</span> <span class="o">=</span> <span class="n">create_dataset_op</span><span class="p">(</span>
+    <span class="n">gcp_project_id</span><span class="o">=</span><span class="n">gcp_project_id</span><span class="p">,</span>
+    <span class="n">gcp_region</span><span class="o">=</span><span class="n">gcp_region</span><span class="p">,</span>
+    <span class="n">dataset_display_name</span><span class="o">=</span><span class="n">dataset_display_name</span><span class="p">,</span>
+    <span class="n">api_endpoint</span><span class="o">=</span><span class="n">api_endpoint</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>If a pipeline component has been defined to have outputs, other components can access those outputs.  E.g., here, the ‘eval’ step is grabbing an output from the ‘train’ step, specifically information about the model display name:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="n">eval_model</span> <span class="o">=</span> <span class="n">eval_model_op</span><span class="p">(</span>
+    <span class="n">gcp_project_id</span><span class="o">=</span><span class="n">gcp_project_id</span><span class="p">,</span>
+    <span class="n">gcp_region</span><span class="o">=</span><span class="n">gcp_region</span><span class="p">,</span>
+    <span class="n">bucket_name</span><span class="o">=</span><span class="n">bucket_name</span><span class="p">,</span>
+    <span class="n">gcs_path</span><span class="o">=</span><span class="s">'automl_evals/{}'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">dsl</span><span class="o">.</span><span class="n">RUN_ID_PLACEHOLDER</span><span class="p">),</span>
+    <span class="n">api_endpoint</span><span class="o">=</span><span class="n">api_endpoint</span><span class="p">,</span>
+    <span class="n">model_display_name</span><span class="o">=</span><span class="n">train_model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'model_display_name'</span><span class="p">]</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>In this manner it is straightforward to put together a pipeline from your component definitions.  Just don’t forget to recompile the pipeline script (to generate its corresponding <code class="highlighter-rouge">.tar.gz</code> archive) if any of its component definitions changed, e.g. <code class="highlighter-rouge">python tables_pipeline_caip.py</code>.</p>
+
+
+  </div><a class="u-url" href="/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/gcp_blog/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/gcp_blog/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/gcp_blog/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Using Google Cloud Platform</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
