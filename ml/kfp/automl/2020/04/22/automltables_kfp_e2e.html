@@ -7,15 +7,15 @@
 <meta name="generator" content="Jekyll v4.0.0" />
 <meta property="og:title" content="Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
-<meta property="og:description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
+<meta name="description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow" />
+<meta property="og:description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow" />
 <link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
 <meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
 <meta property="og:site_name" content="Amy on GCP" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2020-04-22T00:00:00-05:00" />
 <script type="application/ld+json">
-{"description":"An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow","@type":"BlogPosting","headline":"Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html","datePublished":"2020-04-22T00:00:00-05:00","dateModified":"2020-04-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html"},"@context":"https://schema.org"}</script>
+{"description":"An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow","@type":"BlogPosting","headline":"Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html","datePublished":"2020-04-22T00:00:00-05:00","dateModified":"2020-04-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html"},"@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
 
@@ -28,15 +28,15 @@
 <meta name="generator" content="Jekyll v4.0.0" />
 <meta property="og:title" content="Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
-<meta property="og:description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow" />
+<meta name="description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow" />
+<meta property="og:description" content="An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow" />
 <link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
 <meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" />
 <meta property="og:site_name" content="Amy on GCP" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2020-04-22T00:00:00-05:00" />
 <script type="application/ld+json">
-{"description":"An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow","@type":"BlogPosting","headline":"Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html","datePublished":"2020-04-22T00:00:00-05:00","dateModified":"2020-04-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html"},"@context":"https://schema.org"}</script>
+{"description":"An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow","@type":"BlogPosting","headline":"Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html","datePublished":"2020-04-22T00:00:00-05:00","dateModified":"2020-04-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html"},"@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
 <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
@@ -97,7 +97,7 @@ window.onload = wrap_img;
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines</h1><p class="page-description">An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-04-22T00:00:00-05:00" itemprop="datePublished">
+    <h1 class="post-title p-name" itemprop="name headline">Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines</h1><p class="page-description">An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-04-22T00:00:00-05:00" itemprop="datePublished">
         Apr 22, 2020
       </time>
        • <span class="read-time" title="Estimated read time">
@@ -246,7 +246,7 @@ Click on <strong>Pipelines</strong> in the left nav bar of the Pipelines Dashboa
 </figure>
 
 <p>Click the <strong>+Create Run</strong> button to run the pipeline.  You will need to fill in some pipeline parameters.
-Specifically, replace <code class="highlighter-rouge">YOUR_PROJECT_HERE</code> with the name of your project; replace <code class="highlighter-rouge">YOUR_DATASET_NAME</code> with the name you want to give your new dataset (make it unique, and use letters, numbers and underscores up to 32 characters); and replace <code class="highlighter-rouge">YOUR_BUCKET_NAME</code> with the name of a <a href="https://cloud.google.com/storage">GCS bucket</a>.  This bucket should be in the <a href="https://cloud.google.com/automl-tables/docs/locations#buckets">same <em>region</em></a> as that specified by the <code class="highlighter-rouge">gcp_region</code> parameter. E.g., if you keep the default <code class="highlighter-rouge">us-central1</code> region, your bucket should also be a <em>regional</em> (not multi-regional) bucket in the <code class="highlighter-rouge">us-central1</code> region. ++double check that this is necessary.++</p>
+Specifically, replace <code class="highlighter-rouge">YOUR_PROJECT_HERE</code> with the name of your project; replace <code class="highlighter-rouge">YOUR_DATASET_NAME</code> with the name you want to give your new dataset (make it unique, and use letters, numbers and underscores up to 32 characters); and replace <code class="highlighter-rouge">YOUR_BUCKET_NAME</code> with the name of a <a href="https://cloud.google.com/storage">GCS bucket</a>. Do not include the <code class="highlighter-rouge">gs://</code> prefix— just enter the name. This bucket should be in the <a href="https://cloud.google.com/automl-tables/docs/locations#buckets">same <em>region</em></a> as that specified by the <code class="highlighter-rouge">gcp_region</code> parameter. E.g., if you keep the default <code class="highlighter-rouge">us-central1</code> region, your bucket should also be a <em>regional</em> (not multi-regional) bucket in the <code class="highlighter-rouge">us-central1</code> region. ++double check that this is necessary.++</p>
 
 <p>If you want to schedule a recurrent set of runs, you can do that instead.  If your data is in <a href="https://cloud.google.com/bigquery">BigQuery</a>— as is the case for this example pipeline— and has a temporal aspect, you could define a <em>view</em> to reflect that, e.g. to return data from a window over the last <code class="highlighter-rouge">N</code> days or hours.  Then, the AutoML pipeline could specify ingestion of data from that view, grabbing an updated data window each time the pipeline is run, and building a new model based on that updated window.</p>
 
