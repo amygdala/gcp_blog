@@ -1,7 +1,7 @@
 ---
 toc: true
 layout: post
-description: An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing and end-to-end workflow
+description: An overview of new AutoML Tables features, via a Cloud AI Platform Pipelines example showing an end-to-end workflow
 categories: [ml, kfp, automl]
 title: Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines
 ---
@@ -11,7 +11,7 @@ title: Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipeli
 
 ## Introduction
 
-[AutoML Tables][1] lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data. 
+[AutoML Tables][1] lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data.
 
 A number of new AutoML Tables features have been released recently. These include:
 - An improved [Python client library][2]
@@ -19,7 +19,7 @@ A number of new AutoML Tables features have been released recently. These includ
 - The ability to [export your model and serve it in a container][4] anywhere
 - The ability to view model search progress and final model hyperparameters [in Cloud Logging][5]
 
-This post gives a tour of some of these new features via a [Cloud AI Platform Pipelines][6] example, that shows end-to-end management of an AutoML Tables workflow. 
+This post gives a tour of some of these new features via a [Cloud AI Platform Pipelines][6] example, that shows end-to-end management of an AutoML Tables workflow.
 
 The example pipeline [creates a _dataset_][7], [imports][8] data into the dataset from a [BigQuery][9] _view_, and [trains][10] a custom model on that data. Then, it fetches [evaluation and metrics][11] information about the trained model, and based on specified criteria about model quality, uses that information to automatically determine whether to [deploy][12] the model for online prediction.   Once the model is deployed, you can make prediction requests, and optionally obtain prediction [explanations][13] as well as the prediction result.
 In addition, the example shows how to scalably **_serve_** your exported trained model from your Cloud AI Platform Pipelines installation for prediction requests.
@@ -39,7 +39,7 @@ You can run this example via a [Cloud AI Platform Pipelines][23] installation, o
 
 ### Install a Cloud AI Platform Pipelines cluster
 
-You can create an AI Platform Pipelines installation with a few clicks.  Access AI Platform Pipelines by visiting the [AI Platform Panel][27] in the [Cloud Console][28]. 
+You can create an AI Platform Pipelines installation with a few clicks.  Access AI Platform Pipelines by visiting the [AI Platform Panel][27] in the [Cloud Console][28].
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/sA17BykJuzF.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/sA17BykJuzF.png" width="90%"/></a>
@@ -56,11 +56,11 @@ You can also run this example from a [Kubeflow][31] installation. For the exampl
 
 ### Upload and run the Tables end-to-end Pipeline
 
-Once a Pipelines installation is running, we can upload the example AutoML Tables pipeline. 
-Click on **Pipelines** in the left nav bar of the Pipelines Dashboard.  Click on **Upload Pipeline**. 
+Once a Pipelines installation is running, we can upload the example AutoML Tables pipeline.
+Click on **Pipelines** in the left nav bar of the Pipelines Dashboard.  Click on **Upload Pipeline**.
 
-- For Cloud AI Platform Pipelines, upload [`tables_pipeline_caip.py.tar.gz`][36].  This archive points to the compiled version of [this pipeline][37], specified and compiled using the [Kubeflow Pipelines SDK][38].  
-- For Kubeflow Pipelines on a Kubeflow installation, upload  [`tables_pipeline_kf.py.tar.gz`][39].  This archive points to the compiled version of [this pipeline][40].   
+- For Cloud AI Platform Pipelines, upload [`tables_pipeline_caip.py.tar.gz`][36].  This archive points to the compiled version of [this pipeline][37], specified and compiled using the [Kubeflow Pipelines SDK][38].
+- For Kubeflow Pipelines on a Kubeflow installation, upload  [`tables_pipeline_kf.py.tar.gz`][39].  This archive points to the compiled version of [this pipeline][40].
 **To run this example on a KF installation, you will need to give the `<deployment-name>-user@<project-id>.iam.gserviceaccount.com` service account `AutoML Admin` privileges**.
 
 
@@ -74,7 +74,7 @@ The uploaded pipeline graph will look similar to this:
 </figure>
 
 Click the **+Create Run** button to run the pipeline.  You will need to fill in some pipeline parameters.
-Specifically, replace `YOUR_PROJECT_HERE` with the name of your project; replace `YOUR_DATASET_NAME` with the name you want to give your new dataset (make it unique, and use letters, numbers and underscores up to 32 characters); and replace `YOUR_BUCKET_NAME` with the name of a [GCS bucket][41].  This bucket should be in the [same _region_][42] as that specified by the `gcp_region` parameter. E.g., if you keep the default `us-central1` region, your bucket should also be a _regional_ (not multi-regional) bucket in the `us-central1` region. ++double check that this is necessary.++
+Specifically, replace `YOUR_PROJECT_HERE` with the name of your project; replace `YOUR_DATASET_NAME` with the name you want to give your new dataset (make it unique, and use letters, numbers and underscores up to 32 characters); and replace `YOUR_BUCKET_NAME` with the name of a [GCS bucket][41]. Do not include the `gs://` prefix— just enter the name. This bucket should be in the [same _region_][42] as that specified by the `gcp_region` parameter. E.g., if you keep the default `us-central1` region, your bucket should also be a _regional_ (not multi-regional) bucket in the `us-central1` region. ++double check that this is necessary.++
 
  If you want to schedule a recurrent set of runs, you can do that instead.  If your data is in [BigQuery][43]— as is the case for this example pipeline— and has a temporal aspect, you could define a _view_ to reflect that, e.g. to return data from a window over the last `N` days or hours.  Then, the AutoML pipeline could specify ingestion of data from that view, grabbing an updated data window each time the pipeline is run, and building a new model based on that updated window.
 
@@ -112,7 +112,7 @@ client.set_target_column(
 
 ### Train a custom model on the dataset
 
-Once the dataset is defined and its schema set properly, the pipeline will train the model.  This happens in the `automl-create-model-for-tables` pipeline step. Via pipeline parameters, we can specify the training budget, the _optimization objective_ (if not using the default), and can additionally specify which columns to include or exclude from the model inputs.  
+Once the dataset is defined and its schema set properly, the pipeline will train the model.  This happens in the `automl-create-model-for-tables` pipeline step. Via pipeline parameters, we can specify the training budget, the _optimization objective_ (if not using the default), and can additionally specify which columns to include or exclude from the model inputs.
 
 You may want to specify a non-default optimization objective depending upon the characteristics of your dataset.  [This table][52] describes the available optimization objectives and when you might want to use them. For example, if you were training a classification model using an imbalanced dataset, you might want to specify use of AUC PR (`MAXIMIZE_AU_PRC`), which optimizes results for predictions for the less common class.
 
@@ -147,11 +147,11 @@ For example, here is a look at the Trials logs a custom model trained on the “
 
 
 
-### Custom model evaluation 
+### Custom model evaluation
 
-Once your custom model has finished training, the pipeline moves on to its next step: model evaluation. We can access evaluation metrics via the API.  We’ll use this information to decide whether or not to deploy the model. 
+Once your custom model has finished training, the pipeline moves on to its next step: model evaluation. We can access evaluation metrics via the API.  We’ll use this information to decide whether or not to deploy the model.
 
-These actions are factored into two steps. The process of fetching the evaluation information can be a general-purpose component (pipeline step) used in many situations; and then we’ll follow that with a more special-purpose step, that analyzes that information and uses it to decide whether or not to deploy the trained model.  
+These actions are factored into two steps. The process of fetching the evaluation information can be a general-purpose component (pipeline step) used in many situations; and then we’ll follow that with a more special-purpose step, that analyzes that information and uses it to decide whether or not to deploy the trained model.
 
 In the first of these pipeline steps— the `automl-eval-tables-model` step— we’ll retrieve the evaluation and _global feature importance_ information.
 
@@ -160,11 +160,10 @@ model = client.get_model(model_display_name=model_display_name)
 feat_list = [(column.feature_importance, column.column_display_name)
         for column in model.tables_model_metadata.tables_model_column_info]
 evals = list(client.list_model_evaluations(model_display_name=model_display_name))
-
 ```
 
 AutoML Tables automatically computes global feature importance for a trained model. This shows, across the evaluation set, the average absolute attribution each feature receives. Higher values mean the feature generally has greater influence on the model’s predictions.
-This information is useful for debugging and improving your model. If a feature’s contribution is negligible—if it has a low value—you can simplify the model by excluding it from future training. 
+This information is useful for debugging and improving your model. If a feature’s contribution is negligible—if it has a low value—you can simplify the model by excluding it from future training.
 The pipeline step renders the global feature importance data as part of the pipeline run’s output:
 
 <figure>
@@ -175,12 +174,15 @@ The pipeline step renders the global feature importance data as part of the pipe
 
 For our example, based on the graphic above, we might try training a model without including `bike_id`.
 
-In the following pipeline step— the `automl-eval-metrics` step— the evaluation output from the previous step is grabbed as input, and parsed to extract metrics that we’ll use in conjunction with pipeline parameters to decide whether or not to deploy the model. One of the pipeline input parameters allows specification of metric thresholds. In this example, we’re training a regression model, and we’re specifying a `mean_absolute_error` (MAE) value as a threshold in the pipeline input parameters:
+In the following pipeline step— the `automl-eval-metrics` step— the evaluation output from the previous step is grabbed as input, and parsed to extract metrics that we’ll use in conjunction with pipeline parameters to decide whether or not to deploy the model. Note that this component is more special-purpose: unlike the other components in this pipeline, which support generalizable operations, this component— while it is parameterized— is specific in how it analyzes the evaluation info and decides whether or not to do the deployment.
+
+One of the pipeline input parameters allows specification of metric thresholds. In this example, we’re training a regression model, and we’re specifying a `mean_absolute_error` (MAE) value as a threshold in the pipeline input parameters:
+
 ```python
 {"mean_absolute_error": 450}
 ```
 
-The pipeline step compares the model evaluation information to the given threshold constraints. In this case, if the MAE is \< `450`, the model will not be deployed. The pipeline step outputs that decision, and displays the evaluation information it’s using as part of the pipeline run’s output:
+The  `automl-eval-metrics` pipeline step compares the model evaluation information to the given threshold constraints. In this case, if the MAE is \< `450`, the model will not be deployed. The pipeline step outputs that decision, and displays the evaluation information it’s using as part of the pipeline run’s output:
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.07.21%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.07.21%20PM.png" width="25%"/></a>
@@ -190,7 +192,7 @@ The pipeline step compares the model evaluation information to the given thresho
 
 ### (Conditional) model deployment
 
-You can _deploy_ any of your custom Tables models to make them accessible for online prediction requests. 
+You can _deploy_ any of your custom Tables models to make them accessible for online prediction requests.
 The pipeline code uses a _conditional test_ to determine whether or not to run the step that deploys the model, based on the output of the evaluation step described above:
 
 ```python
@@ -207,7 +209,7 @@ You can always deploy a model later if you like.
 
 ### Putting it together: The full pipeline execution
 
-The figure below shows the result of a pipeline run.  In this case, the conditional step was executed— based on the model evaluation metrics— and the trained model was deployed.  
+The figure below shows the result of a pipeline run.  In this case, the conditional step was executed— based on the model evaluation metrics— and the trained model was deployed.
 Via the UI, you can view outputs, logs for each step, run artifacts and lineage information, and more.  See [this post][55] for more detail.
 
 ++TODO: replace the following figure with something better++
@@ -226,7 +228,7 @@ Here is a [notebook example][57] of how to request a prediction and its explanat
 ```python
 from google.cloud import automl_v1beta1 as automl
 client = automl.TablesClient(project=PROJECT_ID, region=REGION)
- 
+
 response = client.predict(
     model_display_name=model_display_name,
     inputs=inputs,
@@ -246,11 +248,11 @@ All of the pipeline steps can also be accomplished via the [AutoML Tables UI][61
 
 ## Export the trained model and serve it on a GKE cluster
 
-Recently, Tables launched a feature to let you export your full custom model, packaged so that you can serve it via a Docker container. (Under the hood, it is using TensorFlow Serving). This lets you serve your models anywhere that you can run a container, including a GKE cluster.  
+Recently, Tables launched a feature to let you export your full custom model, packaged so that you can serve it via a Docker container. (Under the hood, it is using TensorFlow Serving). This lets you serve your models anywhere that you can run a container, including a GKE cluster.
 This means that you can run a model serving service on your AI Platform Pipelines or Kubeflow installation, both of which run on GKE.
 
 [This blog post][62] walks through the steps to serve the exported model (in this case, using [Cloud Run][63]).  Follow the instructions in the post through the “View information about your exported model in TensorBoard” [section][64].
-Here, we’ll diverge from the rest of the post and create a GKE service instead.  
+Here, we’ll diverge from the rest of the post and create a GKE service instead.
 
 Make a copy of [`deploy_model_for_tables/model_serve_template.yaml`][65] file and name it `model_serve.yaml`.  Edit this new file, **replacing** `MODEL_NAME` with some meaningful name for your model, `IMAGE_NAME` with the name of the container image you built (as described in the [blog post][66], and `NAMESPACE` with the namespace in which you want to run your service (e.g. `default`).
 
@@ -268,7 +270,7 @@ kubectl delete -f model_serve.yaml
 
 ### Send prediction requests to your deployed model service
 
-Once your model serving service is deployed, you can send prediction requests to it.  Because we didn’t set up an external endpoint for our service in this simple example, we’ll connect to the service via port forwarding. 
+Once your model serving service is deployed, you can send prediction requests to it.  Because we didn’t set up an external endpoint for our service in this simple example, we’ll connect to the service via port forwarding.
 From the command line, run the following, **replacing** `<your-model-name>` with the value you replaced `MODEL_NAME` by, when creating your `yaml` file, and `<service-namespace>` with the namespace in which your service is running— the same namespace value you used in the yaml file.
 
 ```bash
@@ -292,8 +294,8 @@ You should see a result like this, with a prediction for each instance in the `i
 ## A deeper dive into the pipeline code
 
 The updated [Tables Python client library][71] makes it very straightforward to build the Pipelines components that support each stage of the workflow.
-Kubeflow Pipeline steps are container-based, so that any action you can support via a Docker container image can become a pipeline step. 
-That doesn’t mean that an end-user necessarily needs to have Docker installed.  For many straightforward cases, building your pipeline steps 
+Kubeflow Pipeline steps are container-based, so that any action you can support via a Docker container image can become a pipeline step.
+That doesn’t mean that an end-user necessarily needs to have Docker installed.  For many straightforward cases, building your pipeline steps
 
 ### Using the ‘lightweight python components’  functionality to build pipeline steps
 
@@ -302,7 +304,7 @@ For most of the components in this example, we’re building them using the [“
 Each component’s python file includes a function definition, and then a `func_to_container_op` call, passing the function definition, to generate the component’s `yaml` package file.  As we’ll see below, these component package files make it very straightforward to put these steps together to form a pipeline.
 
 
-The [`deploy_model_for_tables/tables_deploy_component.py`][74] file is representative.   It contains an `automl_deploy_tables_model` function definition.  
+The [`deploy_model_for_tables/tables_deploy_component.py`][74] file is representative.   It contains an `automl_deploy_tables_model` function definition.
 
 ```
 def automl_deploy_tables_model(
@@ -324,7 +326,7 @@ To build the component `yaml` file corresponding to this function, we add the fo
 if __name__ == '__main__':
 	import kfp
 	kfp.components.func_to_container_op(
-        automl_deploy_tables_model, output_component_file='tables_deploy_component.yaml', 
+        automl_deploy_tables_model, output_component_file='tables_deploy_component.yaml',
         base_image='python:3.7')
 ```
 
