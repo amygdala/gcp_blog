@@ -344,13 +344,14 @@ The pipeline step renders the global feature importance data as part of the pipe
 
 <p>For our example, based on the graphic above, we might try training a model without including <code class="highlighter-rouge">bike_id</code>.</p>
 
-<p>In the following pipeline step— the <code class="highlighter-rouge">automl-eval-metrics</code> step— the evaluation output from the previous step is grabbed as input, and parsed to extract metrics that we’ll use in conjunction with pipeline parameters to decide whether or not to deploy the model. This component is more special-purpose: unlike the other components in this pipeline, which support generalizable operations, this component— while it is parameterized— is specific in how it analyzes the evaluation info and decides whether or not to do the deployment.
-One of the pipeline input parameters allows specification of metric thresholds. In this example, we’re training a regression model, and we’re specifying a <code class="highlighter-rouge">mean_absolute_error</code> (MAE) value as a threshold in the pipeline input parameters:</p>
+<p>In the following pipeline step— the <code class="highlighter-rouge">automl-eval-metrics</code> step— the evaluation output from the previous step is grabbed as input, and parsed to extract metrics that we’ll use in conjunction with pipeline parameters to decide whether or not to deploy the model. Note that this component is more special-purpose: unlike the other components in this pipeline, which support generalizable operations, this component— while it is parameterized— is specific in how it analyzes the evaluation info and decides whether or not to do the deployment.</p>
+
+<p>One of the pipeline input parameters allows specification of metric thresholds. In this example, we’re training a regression model, and we’re specifying a <code class="highlighter-rouge">mean_absolute_error</code> (MAE) value as a threshold in the pipeline input parameters:</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="s">"mean_absolute_error"</span><span class="p">:</span> <span class="mi">450</span><span class="p">}</span>
 </code></pre></div></div>
 
-<p>The pipeline step compares the model evaluation information to the given threshold constraints. In this case, if the MAE is &lt; <code class="highlighter-rouge">450</code>, the model will not be deployed. The pipeline step outputs that decision, and displays the evaluation information it’s using as part of the pipeline run’s output:</p>
+<p>The  <code class="highlighter-rouge">automl-eval-metrics</code> pipeline step compares the model evaluation information to the given threshold constraints. In this case, if the MAE is &lt; <code class="highlighter-rouge">450</code>, the model will not be deployed. The pipeline step outputs that decision, and displays the evaluation information it’s using as part of the pipeline run’s output:</p>
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.07.21%20PM.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/automl/tables_e2e/Screen%20Shot%202020-03-23%20at%202.07.21%20PM.png" width="25%"></a>
