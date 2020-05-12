@@ -252,8 +252,8 @@ window.onload = wrap_img;
 <a class="anchor" href="#Give-Cloud-Function's-service-account-the-necessary-access" aria-hidden="true"><span class="octicon octicon-link"></span></a>Give Cloud Function's service account the necessary access<a class="anchor-link" href="#Give-Cloud-Function's-service-account-the-necessary-access"> </a>
 </h3>
 <p>First, make sure the Cloud Function API <a href="https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com?q=functions">is enabled</a>.</p>
-<p>Functions uses the project's 'appspot' acccount for its service account.  It will have the form: 
-<code>PROJECT_ID@appspot.gserviceaccount.com</code>. (This is also the App Engine service account).</p>
+<p>Cloud Functions uses the project's 'appspot' acccount for its service account.  It will have the form: 
+<code>PROJECT_ID@appspot.gserviceaccount.com</code>. (This is also the project's App Engine service account).</p>
 <ul>
 <li>Go to your project's <a href="https://console.cloud.google.com/iam-admin/serviceaccounts">IAM - Service Account page</a>.</li>
 <li>Find the <code>PROJECT_ID@appspot.gserviceaccount.com</code> account and copy its email address.</li>
