@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Using Google Cloud Functions to support event-based triggering of Cloud AI Platform Pipelines | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Using Google Cloud Functions to support event-based triggering of Cloud AI Platform Pipelines" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<meta property="og:description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-05-12T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.","@type":"BlogPosting","headline":"Using Google Cloud Functions to support event-based triggering of Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html","datePublished":"2020-05-12T00:00:00-05:00","dateModified":"2020-05-12T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+<link rel="shortcut icon" type="image/x-icon" href="/gcp_blog/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Using Google Cloud Functions to support event-based triggering of Cloud AI Platform Pipelines | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Using Google Cloud Functions to support event-based triggering of Cloud AI Platform Pipelines" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<meta property="og:description" content="How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result." />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-05-12T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.","@type":"BlogPosting","headline":"Using Google Cloud Functions to support event-based triggering of Cloud AI Platform Pipelines","url":"https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html","datePublished":"2020-05-12T00:00:00-05:00","dateModified":"2020-05-12T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
+<link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head><body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/gcp_blog/">Amy on GCP</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/gcp_blog/about/">About Me</a><a class="page-link" href="/gcp_blog/search/">Search</a><a class="page-link" href="/gcp_blog/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Using Google Cloud Functions to support event-based triggering of Cloud AI Platform Pipelines</h1><p class="page-description">How to use the AutoML Tables client libraries to create a dataset; train a custom model; deploy the model; and use the model to make predictions and get explainations about the prediction result.</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-05-12T00:00:00-05:00" itemprop="datePublished">
+        May 12, 2020
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      6 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i>
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#ml">ml</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#pipelines">pipelines</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#mlops">mlops</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#kfp">kfp</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#gcf">gcf</a>
+        
+      
+      </p>
+    
+
+    
+      
+        <div class="pb-5 d-flex flex-wrap flex-justify-end">
+          <div class="px-2">
+
+    <a href="https://github.com/amygdala/gcp_blog/tree/master/_notebooks/2020-05-12-hosted_kfp_gcf.ipynb" role="button" target="_blank">
+<img class="notebook-badge-image" src="/gcp_blog/assets/badges/github.svg" alt="View On GitHub">
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://mybinder.org/v2/gh/amygdala/gcp_blog/master?filepath=_notebooks%2F2020-05-12-hosted_kfp_gcf.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/gcp_blog/assets/badges/binder.svg" alt="Open In Binder"/>
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://colab.research.google.com/github/amygdala/gcp_blog/blob/master/_notebooks/2020-05-12-hosted_kfp_gcf.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/gcp_blog/assets/badges/colab.svg" alt="Open In Colab"/>
+    </a>
+</div>
+          <div class="px-2">
+    <a href="https://console.cloud.google.com/ai-platform/notebooks/deploy-notebook?download_url=https://raw.githubusercontent.com/amygdala/gcp_blog/master/_notebooks/2020-05-12-hosted_kfp_gcf.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/gcp_blog/assets/badges/caip.png" alt="Open In Cloud AI Platform Notebooks"/>
+    </a>
+</div>
+
+        </div>
+      </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#Setup">Setup </a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#Create-a-Cloud-AI-Platform-Pipelines-installation">Create a Cloud AI Platform Pipelines installation </a></li>
+<li class="toc-entry toc-h3"><a href="#Identify-(or-create)-a-Cloud-Storage-bucket-to-use-for-the-example">Identify (or create) a Cloud Storage bucket to use for the example </a></li>
+<li class="toc-entry toc-h3"><a href="#Give-Cloud-Function's-service-account-the-necessary-access">Give Cloud Function&#39;s service account the necessary access </a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#Create-a-simple-GCF-function-to-test-your-configuration">Create a simple GCF function to test your configuration </a></li>
+<li class="toc-entry toc-h2"><a href="#Deploy-a-Pipeline-from-a-GCF-function">Deploy a Pipeline from a GCF function </a></li>
+</ul><!--
+#################################################
+### THIS FILE WAS AUTOGENERATED! DO NOT EDIT! ###
+#################################################
+# file to edit: _notebooks/2020-05-12-hosted_kfp_gcf.ipynb
+-->
+
+<div class="container" id="notebook-container">
+        
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This example shows how you can run a <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-cloud-ai-platform-pipelines">Cloud AI Platform Pipeline</a> from a <a href="https://cloud.google.com/functions/docs/">Google Cloud Function</a>, thus providing a way for Pipeline runs to be triggered by events (in the interim before this is supported by Pipelines itself).</p>
+<p>In this example, the function is triggered by the addition of or update to a file in a <a href="https://cloud.google.com/storage/">Google Cloud Storage</a> (GCS) bucket, but Cloud Functions can have other triggers too (including <a href="https://cloud.google.com/pubsub/docs/">Pub/Sub</a>-based triggers).</p>
+<p>The example is Google Cloud Platform (GCP)-specific, and requires a <a href="https://cloud.google.com/ai-platform/pipelines/docs">Cloud AI Platform Pipelines</a> installation using Pipelines version &gt;= 0.4.  To run this as a notebook, go <a href="https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/functions/hosted_kfp_gcf.ipynb">here</a>.</p>
+<p>(If you are instead interested in how to do this with a Kubeflow-based pipelines installation, see <a href="https://github.com/amygdala/kubeflow-examples/blob/cookbook/cookbook/pipelines/notebooks/gcf_kfp_trigger.ipynb">this notebook</a>).</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Setup">
+<a class="anchor" href="#Setup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setup<a class="anchor-link" href="#Setup"> </a>
+</h2>
+<h3 id="Create-a-Cloud-AI-Platform-Pipelines-installation">
+<a class="anchor" href="#Create-a-Cloud-AI-Platform-Pipelines-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Create a Cloud AI Platform Pipelines installation<a class="anchor-link" href="#Create-a-Cloud-AI-Platform-Pipelines-installation"> </a>
+</h3>
+<p>Follow the instructions in the <a href="https://cloud.google.com/ai-platform/pipelines/docs">documentation</a> to create a Cloud AI Platform Pipelines installation.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Identify-(or-create)-a-Cloud-Storage-bucket-to-use-for-the-example">
+<a class="anchor" href="#Identify-(or-create)-a-Cloud-Storage-bucket-to-use-for-the-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Identify (or create) a Cloud Storage bucket to use for the example<a class="anchor-link" href="#Identify-(or-create)-a-Cloud-Storage-bucket-to-use-for-the-example"> </a>
+</h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Before executing the next cell</strong>, edit it to <strong>set the <code>TRIGGER_BUCKET</code> environment variable</strong> to a Google Cloud Storage bucket (<a href="https://console.cloud.google.com/storage/browser">create a bucket first</a> if necessary). Do <em>not</em> include the <code>gs://</code> prefix in the bucket name.</p>
+<p>We'll deploy the GCF function so that it will trigger on new and updated files (blobs) in this bucket.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">env</span> TRIGGER_BUCKET=REPLACE_WITH_YOUR_GCS_BUCKET_NAME
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Give-Cloud-Function's-service-account-the-necessary-access">
+<a class="anchor" href="#Give-Cloud-Function's-service-account-the-necessary-access" aria-hidden="true"><span class="octicon octicon-link"></span></a>Give Cloud Function's service account the necessary access<a class="anchor-link" href="#Give-Cloud-Function's-service-account-the-necessary-access"> </a>
+</h3>
+<p>First, make sure the Cloud Function API <a href="https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com?q=functions">is enabled</a>.</p>
+<p>Functions uses the project's 'appspot'acccount for its service account.  It will have the form: 
+<code>PROJECT_ID@appspot.gserviceaccount.com</code>. (This is also the App Engine service account).</p>
+<ul>
+<li>Go to your project's <a href="https://console.cloud.google.com/iam-admin/serviceaccounts">IAM - Service Account page</a>.</li>
+<li>Find the <code>PROJECT_ID@appspot.gserviceaccount.com</code> account and copy its email address.</li>
+<li>Find the project's Compute Engine (GCE) default service account (this is the default account used for the Pipelines installation).  It will have a form like this: <code>PROJECT_NUMBER@developer.gserviceaccount.com</code>.
+Click the checkbox next to the GCE service account, and in the 'INFO PANEL' to the right, click <strong>ADD MEMBER</strong>. Add the Functions service account (<code>PROJECT_ID@appspot.gserviceaccount.com</code>) as a <strong>Project Viewer</strong> of the GCE service account. </li>
+</ul>
+<p><img src="https://storage.googleapis.com/amy-jo/images/kfp-deploy/hosted_kfp_setup1.png" alt="Add the Functions service account as a project viewer of the GCE service account"></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next, configure your <code>TRIGGER_BUCKET</code> to allow the Functions service account access to that bucket.</p>
+<ul>
+<li>Navigate in the console to your list of buckets in the <a href="https://console.cloud.google.com/storage/browser">Storage Browser</a>.</li>
+<li>Click the checkbox next to the <code>TRIGGER_BUCKET</code>.  In the 'INFO PANEL' to the right, click <strong>ADD MEMBER</strong>.  Add the service account (<code>PROJECT_ID@appspot.gserviceaccount.com</code>) with <code>Storage Object Admin</code> permissions. (While not tested, giving both Object view and create permissions should also suffice).</li>
+</ul>
+<p><img src="https://storage.googleapis.com/amy-jo/images/kfp-deploy/hosted_kfp_setup2.png" alt="add the app engine service account to the trigger bucket with view and edit permissions"></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Create-a-simple-GCF-function-to-test-your-configuration">
+<a class="anchor" href="#Create-a-simple-GCF-function-to-test-your-configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Create a simple GCF function to test your configuration<a class="anchor-link" href="#Create-a-simple-GCF-function-to-test-your-configuration"> </a>
+</h2>
+<p>First we'll generate and deploy a simple GCF function, to test that the basics are properly configured.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span>%%bash
+mkdir -p functions
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We'll first create a <code>requirements.txt</code> file, to indicate what packages the GCF code requires to be installed. (We won't actually need <code>kfp</code> for this first 'sanity check' version of a GCF function, but we'll need it below for the second  function we'll create, that deploys a pipeline).</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%writefile</span> functions/requirements.txt
+<span class="n">kfp</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next, we'll create a simple GCF function in the <code>functions/main.py</code> file:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%writefile</span> functions/main.py
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="k">def</span> <span class="nf">gcs_test</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+  <span class="sd">"""Background Cloud Function to be triggered by Cloud Storage.</span>
+<span class="sd">     This generic function logs relevant data when a file is changed.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">      data (dict): The Cloud Functions event payload.</span>
+<span class="sd">      context (google.cloud.functions.Context): Metadata of triggering event.</span>
+<span class="sd">  Returns:</span>
+<span class="sd">      None; the output is written to Stackdriver Logging</span>
+<span class="sd">  """</span>
+
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Event ID: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">event_id</span><span class="p">))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Event type: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">event_type</span><span class="p">))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Data: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Bucket: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'bucket'</span><span class="p">]))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'File: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]))</span>
+  <span class="n">file_uri</span> <span class="o">=</span> <span class="s1">'gs://</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'bucket'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'name'</span><span class="p">])</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Using file uri: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">file_uri</span><span class="p">)</span>
+
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Metageneration: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'metageneration'</span><span class="p">]))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Created: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'timeCreated'</span><span class="p">]))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Updated: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'updated'</span><span class="p">]))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Deploy the GCF function as follows. (You'll need to <strong>wait a moment or two for output of the deployment to display in the notebook</strong>).  You can also run this command from a notebook terminal window in the <code>functions</code> subdirectory.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span>%%bash
+<span class="nb">cd</span> functions
+gcloud functions deploy gcs_test --runtime python37 --trigger-resource <span class="si">${</span><span class="nv">TRIGGER_BUCKET</span><span class="si">}</span> --trigger-event google.storage.object.finalize
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>After you've deployed, test your deployment by adding a file to the specified <code>TRIGGER_BUCKET</code>. You can do this easily by visiting the <strong>Storage</strong> panel in the Cloud Console, clicking on the bucket in the list, and then clicking on <strong>Upload files</strong> in the bucket details view.</p>
+<p>Then, check in the logs viewer panel (<a href="https://console.cloud.google.com/logs/viewer">https://console.cloud.google.com/logs/viewer</a>) to confirm that the GCF function was triggered and ran correctly.  You can select 'Cloud Function' in the first pulldown menu to filter on just those log entries.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Deploy-a-Pipeline-from-a-GCF-function">
+<a class="anchor" href="#Deploy-a-Pipeline-from-a-GCF-function" aria-hidden="true"><span class="octicon octicon-link"></span></a>Deploy a Pipeline from a GCF function<a class="anchor-link" href="#Deploy-a-Pipeline-from-a-GCF-function"> </a>
+</h2>
+<p>Next, we'll create a GCF function that deploys an AI Platform Pipeline when triggered. First, preserve your existing main.py in a backup file:</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span>%%bash
+<span class="nb">cd</span> functions
+mv main.py main.py.bak
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Then, <strong>before executing the next cell</strong>, <strong>edit the <code>HOST</code> variable</strong> in the code below.  You'll replace <code>&lt;your_endpoint&gt;</code> with the correct value for your installation.</p>
+<p>To find this URL, visit the <a href="https://console.cloud.google.com/ai-platform/pipelines/">Pipelines panel</a> in the Cloud Console.<br>
+From here, you can find the URL by clicking on the <strong>SETTINGS</strong> link for the Pipelines installation you want to use, and copying the 'host' string displayed in the client example code (prepend <code>https://</code> to that string in the code below).<br>
+You can alternately click on <strong>OPEN PIPELINES DASHBOARD</strong> for the Pipelines installation, and copy that URL, removing the <code>/#/pipelines</code> suffix.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%writefile</span> functions/main.py
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+ 
+<span class="kn">import</span> <span class="nn">kfp</span>
+<span class="kn">import</span> <span class="nn">kfp.compiler</span> <span class="k">as</span> <span class="nn">compiler</span>
+<span class="kn">import</span> <span class="nn">kfp.dsl</span> <span class="k">as</span> <span class="nn">dsl</span>
+ 
+<span class="kn">import</span> <span class="nn">requests</span>
+ 
+<span class="c1"># TODO: replace with your Pipelines endpoint URL</span>
+<span class="n">HOST</span> <span class="o">=</span> <span class="s1">'https://&lt;your_endpoint&gt;.pipelines.googleusercontent.com'</span>
+
+<span class="nd">@dsl</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'Sequential'</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">'A pipeline with two sequential steps.'</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">sequential_pipeline</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">'gs://ml-pipeline-playground/shakespeare1.txt'</span><span class="p">):</span>
+  <span class="sd">"""A pipeline with two sequential steps."""</span>
+  <span class="n">op1</span> <span class="o">=</span> <span class="n">dsl</span><span class="o">.</span><span class="n">ContainerOp</span><span class="p">(</span>
+      <span class="n">name</span><span class="o">=</span><span class="s1">'filechange'</span><span class="p">,</span>
+      <span class="n">image</span><span class="o">=</span><span class="s1">'library/bash:4.4.23'</span><span class="p">,</span>
+      <span class="n">command</span><span class="o">=</span><span class="p">[</span><span class="s1">'sh'</span><span class="p">,</span> <span class="s1">'-c'</span><span class="p">],</span>
+      <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">'echo "</span><span class="si">%s</span><span class="s1">" &gt; /tmp/results.txt'</span> <span class="o">%</span> <span class="n">filename</span><span class="p">],</span>
+      <span class="n">file_outputs</span><span class="o">=</span><span class="p">{</span><span class="s1">'newfile'</span><span class="p">:</span> <span class="s1">'/tmp/results.txt'</span><span class="p">})</span>
+  <span class="n">op2</span> <span class="o">=</span> <span class="n">dsl</span><span class="o">.</span><span class="n">ContainerOp</span><span class="p">(</span>
+      <span class="n">name</span><span class="o">=</span><span class="s1">'echo'</span><span class="p">,</span>
+      <span class="n">image</span><span class="o">=</span><span class="s1">'library/bash:4.4.23'</span><span class="p">,</span>
+      <span class="n">command</span><span class="o">=</span><span class="p">[</span><span class="s1">'sh'</span><span class="p">,</span> <span class="s1">'-c'</span><span class="p">],</span>
+      <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s1">'echo "</span><span class="si">%s</span><span class="s1">"'</span> <span class="o">%</span> <span class="n">op1</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s1">'newfile'</span><span class="p">]]</span>
+      <span class="p">)</span>
+ 
+<span class="k">def</span> <span class="nf">get_access_token</span><span class="p">():</span>
+  <span class="n">url</span> <span class="o">=</span> <span class="s1">'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'</span>
+  <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">'Metadata-Flavor'</span><span class="p">:</span> <span class="s1">'Google'</span><span class="p">})</span>
+  <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+  <span class="n">access_token</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">'access_token'</span><span class="p">]</span>
+  <span class="k">return</span> <span class="n">access_token</span>
+ 
+<span class="k">def</span> <span class="nf">hosted_kfp_test</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Event ID: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">event_id</span><span class="p">))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Event type: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">event_type</span><span class="p">))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Data: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Bucket: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'bucket'</span><span class="p">]))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'File: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]))</span>
+  <span class="n">file_uri</span> <span class="o">=</span> <span class="s1">'gs://</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'bucket'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'name'</span><span class="p">])</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Using file uri: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">file_uri</span><span class="p">)</span>
+  
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Metageneration: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'metageneration'</span><span class="p">]))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Created: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'timeCreated'</span><span class="p">]))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Updated: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'updated'</span><span class="p">]))</span>
+  
+  <span class="n">token</span> <span class="o">=</span> <span class="n">get_access_token</span><span class="p">()</span> 
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'attempting to launch pipeline run.'</span><span class="p">)</span>
+  <span class="n">ts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100000</span><span class="p">)</span>
+  <span class="n">client</span> <span class="o">=</span> <span class="n">kfp</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">HOST</span><span class="p">,</span> <span class="n">existing_token</span><span class="o">=</span><span class="n">token</span><span class="p">)</span>
+  <span class="n">compiler</span><span class="o">.</span><span class="n">Compiler</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">sequential_pipeline</span><span class="p">,</span> <span class="s1">'/tmp/sequential.tar.gz'</span><span class="p">)</span>
+  <span class="n">exp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_experiment</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'gcstriggered'</span><span class="p">)</span>  <span class="c1"># this is a 'get or create' op</span>
+  <span class="n">res</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">run_pipeline</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">'sequential_'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ts</span><span class="p">),</span> <span class="s1">'/tmp/sequential.tar.gz'</span><span class="p">,</span>
+                              <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">'filename'</span><span class="p">:</span> <span class="n">file_uri</span><span class="p">})</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next, deploy the new GCF function. As before, <strong>it will take a moment or two for the results of the deployment to display in the notebook</strong>.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span>%%bash
+<span class="nb">cd</span> functions
+gcloud functions deploy hosted_kfp_test --runtime python37 --trigger-resource <span class="si">${</span><span class="nv">TRIGGER_BUCKET</span><span class="si">}</span> --trigger-event google.storage.object.finalize
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Add another file to your <code>TRIGGER_BUCKET</code>. This time you should see both GCF functions triggered. The <code>hosted_kfp_test</code> function will deploy the pipeline. You'll be able to see it running at your Pipeline installation's endpoint, <code>https://&lt;your_endpoint&gt;.pipelines.googleusercontent.com/#/pipelines</code>, under the given Pipelines Experiment (<code>gcstriggered</code> as default).</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<hr>
+<p>Copyright 2020, Google, LLC.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<p><a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></p>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+
+</div>
+</div>
+</div>
+</div>
+
+
+
+  </div><!-- from https://github.com/utterance/utterances -->
+<script src="https://utteranc.es/client.js"
+        repo="amygdala/gcp_blog"
+        issue-term="title"
+        label="blogpost-comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script><a class="u-url" href="/gcp_blog/ml/pipelines/mlops/kfp/gcf/2020/05/12/hosted_kfp_gcf.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/gcp_blog/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/gcp_blog/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/gcp_blog/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Using Google Cloud Platform</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
