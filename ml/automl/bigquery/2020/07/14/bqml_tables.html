@@ -229,7 +229,7 @@ window.onload = wrap_img;
 The evaluation results should look something like the following:</p>
 
 <figure>
-<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" width="70%"></a>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png"></a>
 <figcaption><br><i>Model evaluation results.</i></figcaption>
 </figure>
 
@@ -263,7 +263,7 @@ To try this yourself, create another differently-named model as shown in the tra
 <p>When I evaluated this second model, which kept the station IDs and day of week as numerics, the results showed that this model was somewhat less accurate:</p>
 
 <figure>
-<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" width="70%"></a>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" target="_blank">&lt;img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" "/&gt;</a>
 <figcaption><br><i>Evaluation results for the model that did not cast categorical numerics to strings.</i></figcaption>
 </figure>
 
@@ -281,11 +281,11 @@ Here’s an example of how to do that.  Via the <code class="highlighter-rouge">
  <span class="k">WHERE</span> <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">9</span><span class="p">))</span> <span class="k">limit</span> <span class="mi">200</span>
 </code></pre></div></div>
 
-<p>The prediction results will look something like this:</p>
+<p>The prediction results will look something like this (click to see larger version):</p>
 
 <figure>
-<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png" width="90%"></a>
-<figcaption><br><i>Global feature importance rankings.</i></figcaption>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png"></a>
+<figcaption><br><i>Model prediction results.</i></figcaption>
 </figure>
 
 <p>Note that while the query above is “standalone”, you can of course access model prediction results as part of a larger BigQuery query too.</p>
