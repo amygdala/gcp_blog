@@ -24,19 +24,21 @@ The [Cloud Public Datasets Program][10] makes available public datasets that are
 
 Using this dataset, we’ll build a _regression_ model to predict the `duration` of a bike rental based on information about the start and end rental stations, the day of the week, the weather on that day, and other data. (If we were running a bike rental company, we could use these predictions—and their explanations—to help us anticipate demand and even plan how to stock each location).
 
-## Creating the training, eval, and test datasets
+## Specifying the training, eval, and test datasets
 
-With BQML (in contrast to using the AutoML Tables API) we need to define our own dataset splits.  We’d like to create training, validation, and test data, but we don’t want the datasets to be sequential. There’s an easy way to do this in a repeatable manner by using the [Farm Hash algorithm][14], implemented as the `FARM_FINGERPRINT` BigQuery SQL function.  We’d like to create an 80/10/10 split.  
+For BQML, we want to first figure out how we'll define our dataset splits.  We’d like to create training, validation, and test data, but we don’t want the any of those datasets to be drawn from sequential rows. There’s an easy way to do this in a repeatable manner by using the [Farm Hash algorithm][14], implemented as the `FARM_FINGERPRINT` BigQuery SQL function.  We’d like to create an 80/10/10 split.
 
 So, the query to generate training data will include a clause like this: 
 ```sql
 WHERE ABS(MOD(FARM_FINGERPRINT(timestamp), 10)) < 8 
 ```
-Similarly,  the query to generate the eval set will use this clause:
+Similarly, the query to generate the eval set will use this clause:
 ```sql
 WHERE  ABS(MOD(FARM_FINGERPRINT(timestamp), 10)) = 8
 ```
 … and the query for the test set will use `= 9`.  
+
+Using this approach, we can build `SELECT` clauses with reproducible results that givve us datasets with the split proportions we want.
 
 ## Tables schema configuration and BQML
 
@@ -68,7 +70,10 @@ Note the casts to `STRING` and the use of `FARM_FINGERPRINT` as discussed above.
 
 (If you’ve taken a look at the `bikes_weather` table, you might notice that the `SELECT` clause does not include the `bike_id` column. A previously-run AutoML Tables analysis of the [global feature importance of the dataset fields][16] indicated that `bike_id` had negligible impact, so we won’t use it for this model).
 
-![global feature importance rankings](../images/global_feature_impt.png)
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/global_feature_impt.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/global_feature_impt.png" /></a>
+<figcaption><br/><i>Global feature importance rankings.</i></figcaption>
+</figure>
 
 ## Evaluating your trained custom model
 After the training has completed, you can evaluate your custom model.  The BigQuery SQL to do that looks like this (again, substitute your own project, dataset, and model name):
@@ -92,7 +97,10 @@ WHERE
 Note that via the `FARM_FINGERPRINT` function, we’re using a different split for evaluation than we used for training.
 The evaluation results should look something like the following:
 
-![model evaluation results](../images/bqml_model_eval.png)
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" /></a>
+<figcaption><br/><i>Model evaluation results.</i></figcaption>
+</figure>
 
 ### Did our schema hints help?
 
@@ -124,7 +132,10 @@ WHERE
 
 When I evaluated this second model, which kept the station IDs and day of week as numerics, the results showed that this model was somewhat less accurate:
 
-![eval results for model 2](../images/bqml_model_2_eval.png)
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" /></a>
+<figcaption><br/><i>Evaluation results for the model that did not cast categorical numerics to strings.</i></figcaption>
+</figure>
 
 
 ## Using your BQML AutoML Tables model for prediction
@@ -141,9 +152,12 @@ SELECT * FROM ML.PREDICT(MODEL `YOUR-PROJECT-ID.YOUR-DATASET.YOUR-MODEL-NAME`,
  WHERE ABS(MOD(FARM_FINGERPRINT(cast(ts as STRING)), 10)) = 9)) limit 200
 ```
 
-The prediction results will look something like this:
+The prediction results will look something like this (click to see larger version):
 
-![prediction results](../images/bqml_prediction_results.png)
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png" /></a>
+<figcaption><br/><i>Model prediction results.</i></figcaption>
+</figure>
 
 Note that while the query above is “standalone”, you can of course access model prediction results as part of a larger BigQuery query too.
 

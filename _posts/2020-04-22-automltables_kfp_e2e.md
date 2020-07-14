@@ -6,8 +6,6 @@ categories: [ml, kfp, automl]
 title: Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines
 ---
 
-# AutoML Tables: end-to-end workflow on Cloud AI Platform Pipelines
-
 
 ## Introduction
 
