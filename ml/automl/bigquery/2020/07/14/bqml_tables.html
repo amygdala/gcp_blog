@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Training an AutoML Tables model with BigQuery ML | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Training an AutoML Tables model with BigQuery ML" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="How to use BigQuery ML to train an AutoML Tables model" />
+<meta property="og:description" content="How to use BigQuery ML to train an AutoML Tables model" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-07-14T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"How to use BigQuery ML to train an AutoML Tables model","@type":"BlogPosting","headline":"Training an AutoML Tables model with BigQuery ML","url":"https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html","datePublished":"2020-07-14T00:00:00-05:00","dateModified":"2020-07-14T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+<link rel="shortcut icon" type="image/x-icon" href="/gcp_blog/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Training an AutoML Tables model with BigQuery ML | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Training an AutoML Tables model with BigQuery ML" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="How to use BigQuery ML to train an AutoML Tables model" />
+<meta property="og:description" content="How to use BigQuery ML to train an AutoML Tables model" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-07-14T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"How to use BigQuery ML to train an AutoML Tables model","@type":"BlogPosting","headline":"Training an AutoML Tables model with BigQuery ML","url":"https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html","datePublished":"2020-07-14T00:00:00-05:00","dateModified":"2020-07-14T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
+<link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head><body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/gcp_blog/">Amy on GCP</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/gcp_blog/about/">About Me</a><a class="page-link" href="/gcp_blog/search/">Search</a><a class="page-link" href="/gcp_blog/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Training an AutoML Tables model with BigQuery ML</h1><p class="page-description">How to use BigQuery ML to train an AutoML Tables model</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-07-14T00:00:00-05:00" itemprop="datePublished">
+        Jul 14, 2020
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      6 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i>
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#ml">ml</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#automl">automl</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#bigquery">bigquery</a>
+        
+      
+      </p>
+    
+
+    </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#introduction">Introduction</a></li>
+<li class="toc-entry toc-h2"><a href="#about-the-dataset-and-modeling-task">About the dataset and modeling task</a></li>
+<li class="toc-entry toc-h2"><a href="#creating-the-training-eval-and-test-datasets">Creating the training, eval, and test datasets</a></li>
+<li class="toc-entry toc-h2"><a href="#tables-schema-configuration-and-bqml">Tables schema configuration and BQML</a></li>
+<li class="toc-entry toc-h2"><a href="#training-the-automl-tables-model-via-bqml">Training the AutoML Tables model via BQML</a></li>
+<li class="toc-entry toc-h2"><a href="#evaluating-your-trained-custom-model">Evaluating your trained custom model</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#did-our-schema-hints-help">Did our schema hints help?</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#using-your-bqml-automl-tables-model-for-prediction">Using your BQML AutoML Tables model for prediction</a></li>
+<li class="toc-entry toc-h2"><a href="#summary">Summary</a></li>
+</ul><h2 id="introduction">
+<a class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p><a href="https://cloud.google.com/bigquery-ml/docs">BigQuery ML</a> (BQML) enables users to create and execute machine learning models in <a href="https://cloud.google.com/bigquery/docs">BigQuery</a> by using SQL queries. &lt;The goal is to democratize machine learning by enabling SQL practitioners to build models using their existing tools and to increase development speed by eliminating the need for data movement.&gt;</p>
+
+<p><a href="https://cloud.google.com/automl-tables/docs/">AutoML Tables</a> lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data, and <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">explain prediction results</a>. It’s useful for a wide range of machine learning tasks, such as asset valuations, fraud detection, credit risk analysis, customer retention prediction, analyzing item layouts in stores, <a href="https://cloud.google.com/blog/products/ai-machine-learning/how-kaggle-solved-a-spam-problem-using-automl">solving comment section spam problems</a>, <a href="https://cloud.google.com/blog/products/ai-machine-learning/using-ai-to-scale-audio-content-categorization">quickly categorizing audio content</a>, <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">predicting rental demand</a>, and more.
+(<a href="https://cloud.google.com/blog/products/ai-machine-learning/new-automl-features-and-end-to-end-workflows-on-ai-platform-pipelines">This blog post</a> gives more detail on many of its capabilities).</p>
+
+<p>Recently, BQML added <a href="https://cloud.google.com/bigquery-ml/docs/reference/standard-sql/bigqueryml-syntax-create-automl#limitations">support for AutoML Tables models</a>.  This makes it easy to train Tables models on your BigQuery data using standard SQL, directly from the BigQuery UI (or API), and to evaluate and use the models for prediction directly via SQL as well.</p>
+
+<p>In this post, we’ll take a look at how to do this, and discuss a few tips as well.</p>
+
+<h2 id="about-the-dataset-and-modeling-task">
+<a class="anchor" href="#about-the-dataset-and-modeling-task" aria-hidden="true"><span class="octicon octicon-link"></span></a>About the dataset and modeling task</h2>
+
+<p>The <a href="https://cloud.google.com/bigquery/public-data/">Cloud Public Datasets Program</a> makes available public datasets that are useful for experimenting with machine learning. We’ll use data that is essentially a join of two public datasets stored in <a href="https://cloud.google.com/bigquery/">BigQuery</a>: <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=london_bicycles&amp;page=dataset&amp;_ga=2.10177653.-1341725502.1591817317">London Bike rentals</a> and <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=noaa_gsod&amp;page=dataset&amp;_ga=2.208160978.-1341725502.1591817317">NOAA weather data</a>, with some additional processing to clean up outliers and derive additional GIS and day-of-week fields.  The table we’ll use is here: <code class="highlighter-rouge">aju-dev-demos.london_bikes_weather.bikes_weather</code>.</p>
+
+<p>Using this dataset, we’ll build a <em>regression</em> model to predict the <code class="highlighter-rouge">duration</code> of a bike rental based on information about the start and end rental stations, the day of the week, the weather on that day, and other data. (If we were running a bike rental company, we could use these predictions—and their explanations—to help us anticipate demand and even plan how to stock each location).</p>
+
+<h2 id="creating-the-training-eval-and-test-datasets">
+<a class="anchor" href="#creating-the-training-eval-and-test-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating the training, eval, and test datasets</h2>
+
+<p>With BQML (in contrast to using the AutoML Tables API) we need to define our own dataset splits.  We’d like to create training, validation, and test data, but we don’t want the datasets to be sequential. There’s an easy way to do this in a repeatable manner by using the <a href="https://github.com/google/farmhash">Farm Hash algorithm</a>, implemented as the <code class="highlighter-rouge">FARM_FINGERPRINT</code> BigQuery SQL function.  We’d like to create an 80/10/10 split.</p>
+
+<p>So, the query to generate training data will include a clause like this:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span> <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">8</span> 
+</code></pre></div></div>
+<p>Similarly,  the query to generate the eval set will use this clause:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span>  <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">8</span>
+</code></pre></div></div>
+<p>… and the query for the test set will use <code class="highlighter-rouge">= 9</code>.</p>
+
+<h2 id="tables-schema-configuration-and-bqml">
+<a class="anchor" href="#tables-schema-configuration-and-bqml" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tables schema configuration and BQML</h2>
+
+<p>If you’ve used AutoML Tables, you may have noticed that after a dataset is ingested, it’s possible to adjust the inferred field (column) schema information. For example, you might have some fields with numeric values that you’d like to treat as <em>categorical</em> when you train your custom model.  This is the case for our dataset, where we’d like to treat the numeric rental station IDs as categorical.</p>
+
+<p>With BQML, it’s not currently possible to explicitly specify the schema for the model inputs, but for numerics that we want to treat as categorical, we can provide a strong hint by casting them to strings; then Tables will decide whether to treat such values as ‘text’ or ‘categorical’.  So, in the SQL below, you’ll see that the <code class="highlighter-rouge">day_of_week</code>, <code class="highlighter-rouge">start_station_id</code>, and <code class="highlighter-rouge">end_station_id</code> columns are all cast to strings.</p>
+
+<h2 id="training-the-automl-tables-model-via-bqml">
+<a class="anchor" href="#training-the-automl-tables-model-via-bqml" aria-hidden="true"><span class="octicon octicon-link"></span></a>Training the AutoML Tables model via BQML</h2>
+
+<p>To train the Tables model, we’ll pick the <code class="highlighter-rouge">AUTOML_REGRESSOR</code> model type (since we want to predict <code class="highlighter-rouge">duration</code>, a numeric value.  In the query, we’ll specify <code class="highlighter-rouge">duration</code> in the <code class="highlighter-rouge">input_label_cols</code> list (thus indicating the “label” column”, and set <code class="highlighter-rouge">budget_hours</code> to <code class="highlighter-rouge">1</code>, meaning that we’re budgeting one hour of training time. (The training process, which includes setup and teardown, etc., will typically take longer).</p>
+
+<p>Here’s the resultant BigQuery query (to run it yourself, substitute your project id, dataset, and model name in the first line, then paste the query into the BigQuery UI query window in the <a href="https://console.cloud.google.com/bigquery">Cloud Console</a>):</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="n">MODEL</span> <span class="nv">`YOUR-PROJECT-ID.YOUR-DATASET.YOUR-MODEL-NAME`</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span><span class="k">OPTIONS</span><span class="p">(</span><span class="n">model_type</span><span class="o">=</span><span class="s1">'AUTOML_REGRESSOR'</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span><span class="n">input_label_cols</span><span class="o">=</span><span class="p">[</span><span class="s1">'duration'</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span><span class="n">budget_hours</span><span class="o">=</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">AS</span> <span class="k">SELECT</span>
+<span class="err"> </span> <span class="n">duration</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">day_of_week</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">dow</span><span class="p">,</span> <span class="n">start_latitude</span><span class="p">,</span> <span class="n">start_longitude</span><span class="p">,</span> <span class="n">end_latitude</span><span class="p">,</span> 
+  <span class="n">end_longitude</span><span class="p">,</span> <span class="n">euclidean</span><span class="p">,</span> <span class="n">loc_cross</span><span class="p">,</span> <span class="n">prcp</span><span class="p">,</span> <span class="k">max</span><span class="p">,</span> <span class="k">min</span><span class="p">,</span> <span class="k">temp</span><span class="p">,</span> <span class="n">dewp</span><span class="p">,</span> 
+  <span class="k">cast</span><span class="p">(</span><span class="n">start_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">ssid</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">end_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">esid</span>
+<span class="k">FROM</span> <span class="nv">`aju-dev-demos.london_bikes_weather.bikes_weather`</span>
+<span class="k">WHERE</span>
+<span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">8</span> 
+</code></pre></div></div>
+
+<p>Note the casts to <code class="highlighter-rouge">STRING</code> and the use of <code class="highlighter-rouge">FARM_FINGERPRINT</code> as discussed above.</p>
+
+<p>(If you’ve taken a look at the <code class="highlighter-rouge">bikes_weather</code> table, you might notice that the <code class="highlighter-rouge">SELECT</code> clause does not include the <code class="highlighter-rouge">bike_id</code> column. A previously-run AutoML Tables analysis of the <a href="https://cloud.google.com/automl-tables/docs/evaluate#evaluation_metrics_for_regression_models">global feature importance of the dataset fields</a> indicated that <code class="highlighter-rouge">bike_id</code> had negligible impact, so we won’t use it for this model).</p>
+
+<p><img src="../images/global_feature_impt.png" alt="global feature importance rankings"></p>
+
+<h2 id="evaluating-your-trained-custom-model">
+<a class="anchor" href="#evaluating-your-trained-custom-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluating your trained custom model</h2>
+<p>After the training has completed, you can evaluate your custom model.  The BigQuery SQL to do that looks like this (again, substitute your own project, dataset, and model name):</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span>
+<span class="err"> </span> <span class="o">*</span>
+<span class="k">FROM</span>
+<span class="err"> </span> <span class="n">ML</span><span class="p">.</span><span class="n">EVALUATE</span><span class="p">(</span><span class="n">MODEL</span> <span class="nv">`YOUR-PROJECT-ID.YOUR-DATASET.YOUR-MODEL-NAME`</span><span class="p">,</span> <span class="p">(</span>
+<span class="k">SELECT</span>
+<span class="err"> </span> <span class="n">duration</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">day_of_week</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">dow</span><span class="p">,</span> <span class="n">start_latitude</span><span class="p">,</span> <span class="n">start_longitude</span><span class="p">,</span> <span class="n">end_latitude</span><span class="p">,</span> 
+  <span class="n">end_longitude</span><span class="p">,</span> <span class="n">euclidean</span><span class="p">,</span> <span class="n">loc_cross</span><span class="p">,</span> <span class="n">prcp</span><span class="p">,</span> <span class="k">max</span><span class="p">,</span> <span class="k">min</span><span class="p">,</span> <span class="k">temp</span><span class="p">,</span> <span class="n">dewp</span><span class="p">,</span> 
+  <span class="k">cast</span><span class="p">(</span><span class="n">start_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">ssid</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">end_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">esid</span>
+<span class="k">FROM</span>
+<span class="err"> </span> <span class="nv">`aju-dev-demos.london_bikes_weather.bikes_weather`</span>
+<span class="k">WHERE</span>
+ <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">8</span>
+ <span class="p">))</span>
+</code></pre></div></div>
+
+<p>Note that via the <code class="highlighter-rouge">FARM_FINGERPRINT</code> function, we’re using a different split for evaluation than we used for training.
+The evaluation results should look something like the following:</p>
+
+<p><img src="../images/bqml_model_eval.png" alt="model evaluation results"></p>
+
+<h3 id="did-our-schema-hints-help">
+<a class="anchor" href="#did-our-schema-hints-help" aria-hidden="true"><span class="octicon octicon-link"></span></a>Did our schema hints help?</h3>
+
+<p>It’s interesting to check whether the schema hints (casting some of the numeric fields to strings) made a difference in model accuracy.
+To try this yourself, create another differently-named model as shown in the training section above, but for the <code class="highlighter-rouge">SELECT</code> clause, don’t include the casts to <code class="highlighter-rouge">STRING</code>, e.g.:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">...</span><span class="k">AS</span> <span class="k">SELECT</span>
+<span class="err"> </span> <span class="n">duration</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="n">day_of_week</span><span class="p">,</span> <span class="n">start_latitude</span><span class="p">,</span> <span class="n">start_longitude</span><span class="p">,</span> <span class="n">end_latitude</span><span class="p">,</span> 
+  <span class="n">end_longitude</span><span class="p">,</span> <span class="n">euclidean</span><span class="p">,</span> <span class="n">loc_cross</span><span class="p">,</span> <span class="n">prcp</span><span class="p">,</span> <span class="k">max</span><span class="p">,</span> <span class="k">min</span><span class="p">,</span> <span class="k">temp</span><span class="p">,</span> <span class="n">dewp</span><span class="p">,</span> <span class="n">start_station_id</span><span class="p">,</span> <span class="n">end_station_id</span>
+</code></pre></div></div>
+
+<p>Then, evaluate this second model (again substituting the details for your own project):</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span>
+<span class="err"> </span> <span class="o">*</span>
+<span class="k">FROM</span>
+<span class="err"> </span> <span class="n">ML</span><span class="p">.</span><span class="n">EVALUATE</span><span class="p">(</span><span class="n">MODEL</span> <span class="nv">`YOUR-PROJECT-ID.YOUR-DATASET.YOUR-MODEL-NAME2`</span><span class="p">,</span> <span class="p">(</span>
+<span class="k">SELECT</span>
+<span class="err"> </span> <span class="n">duration</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="n">day_of_week</span><span class="p">,</span> <span class="n">start_latitude</span><span class="p">,</span> <span class="n">start_longitude</span><span class="p">,</span> <span class="n">end_latitude</span><span class="p">,</span> 
+  <span class="n">end_longitude</span><span class="p">,</span> <span class="n">euclidean</span><span class="p">,</span> <span class="n">loc_cross</span><span class="p">,</span> <span class="n">prcp</span><span class="p">,</span> <span class="k">max</span><span class="p">,</span> <span class="k">min</span><span class="p">,</span> <span class="k">temp</span><span class="p">,</span> <span class="n">dewp</span><span class="p">,</span> <span class="n">start_station_id</span><span class="p">,</span> <span class="n">end_station_id</span>
+<span class="k">FROM</span>
+<span class="err"> </span> <span class="nv">`aju-dev-demos.london_bikes_weather.bikes_weather`</span>
+<span class="k">WHERE</span>
+ <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">8</span>
+ <span class="p">))</span>
+</code></pre></div></div>
+
+<p>When I evaluated this second model, which kept the station IDs and day of week as numerics, the results showed that this model was somewhat less accurate:</p>
+
+<p><img src="../images/bqml_model_2_eval.png" alt="eval results for model 2"></p>
+
+<h2 id="using-your-bqml-automl-tables-model-for-prediction">
+<a class="anchor" href="#using-your-bqml-automl-tables-model-for-prediction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using your BQML AutoML Tables model for prediction</h2>
+
+<p>Once your model is trained, and you’ve ascertained it’s accurate enough, you can use it for prediction.
+Here’s an example of how to do that.  Via the <code class="highlighter-rouge">FARM_FINGERPRINT</code> function, we’re drawing from our third “test” split, but because the resultant dataset is large, we’re just grabbing a few rows (200) for the query below:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">ML</span><span class="p">.</span><span class="n">PREDICT</span><span class="p">(</span><span class="n">MODEL</span> <span class="nv">`YOUR-PROJECT-ID.YOUR-DATASET.YOUR-MODEL-NAME`</span><span class="p">,</span> 
+<span class="p">(</span><span class="k">SELECT</span> <span class="err"> </span> <span class="n">duration</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">day_of_week</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">dow</span><span class="p">,</span> <span class="n">start_latitude</span><span class="p">,</span> <span class="n">start_longitude</span><span class="p">,</span> <span class="n">end_latitude</span><span class="p">,</span> 
+  <span class="n">end_longitude</span><span class="p">,</span> <span class="n">euclidean</span><span class="p">,</span> <span class="n">loc_cross</span><span class="p">,</span> <span class="n">prcp</span><span class="p">,</span> <span class="k">max</span><span class="p">,</span> <span class="k">min</span><span class="p">,</span> <span class="k">temp</span><span class="p">,</span> <span class="n">dewp</span><span class="p">,</span> 
+  <span class="k">cast</span><span class="p">(</span><span class="n">start_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">ssid</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">end_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">esid</span>
+ <span class="k">FROM</span> <span class="nv">`aju-dev-demos.london_bikes_weather.bikes_weather`</span> 
+ <span class="k">WHERE</span> <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">9</span><span class="p">))</span> <span class="k">limit</span> <span class="mi">200</span>
+</code></pre></div></div>
+
+<p>The prediction results will look something like this:</p>
+
+<p><img src="../images/bqml_prediction_results.png" alt="prediction results"></p>
+
+<p>Note that while the query above is “standalone”, you can of course access model prediction results as part of a larger BigQuery query too.</p>
+
+<h2 id="summary">
+<a class="anchor" href="#summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Summary</h2>
+
+<p>In this post, we showed how to train an AutoML Tables model using BQML, evaluate the model, and then use it for prediction— all from BigQuery.
+The <a href="https://cloud.google.com/bigquery-ml/docs">BQML documentation</a> has more detail on getting started, and resources for the other model types available through BQML.</p>
+
+
+  </div><a class="u-url" href="/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/gcp_blog/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/gcp_blog/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/gcp_blog/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Using Google Cloud Platform</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
