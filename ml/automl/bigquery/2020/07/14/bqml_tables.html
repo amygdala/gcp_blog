@@ -128,7 +128,7 @@ window.onload = wrap_img;
     <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#introduction">Introduction</a></li>
 <li class="toc-entry toc-h2"><a href="#about-the-dataset-and-modeling-task">About the dataset and modeling task</a></li>
-<li class="toc-entry toc-h2"><a href="#creating-the-training-eval-and-test-datasets">Creating the training, eval, and test datasets</a></li>
+<li class="toc-entry toc-h2"><a href="#specifying-the-training-eval-and-test-datasets">Specifying the training, eval, and test datasets</a></li>
 <li class="toc-entry toc-h2"><a href="#tables-schema-configuration-and-bqml">Tables schema configuration and BQML</a></li>
 <li class="toc-entry toc-h2"><a href="#training-the-automl-tables-model-via-bqml">Training the AutoML Tables model via BQML</a></li>
 <li class="toc-entry toc-h2"><a href="#evaluating-your-trained-custom-model">Evaluating your trained custom model</a>
@@ -157,18 +157,20 @@ window.onload = wrap_img;
 
 <p>Using this dataset, we’ll build a <em>regression</em> model to predict the <code class="highlighter-rouge">duration</code> of a bike rental based on information about the start and end rental stations, the day of the week, the weather on that day, and other data. (If we were running a bike rental company, we could use these predictions—and their explanations—to help us anticipate demand and even plan how to stock each location).</p>
 
-<h2 id="creating-the-training-eval-and-test-datasets">
-<a class="anchor" href="#creating-the-training-eval-and-test-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating the training, eval, and test datasets</h2>
+<h2 id="specifying-the-training-eval-and-test-datasets">
+<a class="anchor" href="#specifying-the-training-eval-and-test-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Specifying the training, eval, and test datasets</h2>
 
-<p>With BQML (in contrast to using the AutoML Tables API) we need to define our own dataset splits.  We’d like to create training, validation, and test data, but we don’t want the datasets to be sequential. There’s an easy way to do this in a repeatable manner by using the <a href="https://github.com/google/farmhash">Farm Hash algorithm</a>, implemented as the <code class="highlighter-rouge">FARM_FINGERPRINT</code> BigQuery SQL function.  We’d like to create an 80/10/10 split.</p>
+<p>For BQML, we want to first figure out how we’ll define our dataset splits.  We’d like to create training, validation, and test data, but we don’t want the any of those datasets to be drawn from sequential rows. There’s an easy way to do this in a repeatable manner by using the <a href="https://github.com/google/farmhash">Farm Hash algorithm</a>, implemented as the <code class="highlighter-rouge">FARM_FINGERPRINT</code> BigQuery SQL function.  We’d like to create an 80/10/10 split.</p>
 
 <p>So, the query to generate training data will include a clause like this:</p>
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span> <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">8</span> 
 </code></pre></div></div>
-<p>Similarly,  the query to generate the eval set will use this clause:</p>
+<p>Similarly, the query to generate the eval set will use this clause:</p>
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span>  <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">8</span>
 </code></pre></div></div>
 <p>… and the query for the test set will use <code class="highlighter-rouge">= 9</code>.</p>
+
+<p>Using this approach, we can build <code class="highlighter-rouge">SELECT</code> clauses with reproducible results that givve us datasets with the split proportions we want.</p>
 
 <h2 id="tables-schema-configuration-and-bqml">
 <a class="anchor" href="#tables-schema-configuration-and-bqml" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tables schema configuration and BQML</h2>
