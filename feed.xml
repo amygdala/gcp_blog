@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.0.0">Jekyll</generator><link href="https://amygdala.github.io/gcp_blog/feed.xml" rel="self" type="application/atom+xml" /><link href="https://amygdala.github.io/gcp_blog/" rel="alternate" type="text/html" /><updated>2020-07-14T16:32:39-05:00</updated><id>https://amygdala.github.io/gcp_blog/feed.xml</id><title type="html">Amy on GCP</title><subtitle>Using Google Cloud Platform</subtitle><entry><title type="html">Training an AutoML Tables model with BigQuery ML</title><link href="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html" rel="alternate" type="text/html" title="Training an AutoML Tables model with BigQuery ML" /><published>2020-07-14T00:00:00-05:00</published><updated>2020-07-14T00:00:00-05:00</updated><id>https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html">&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.0.0">Jekyll</generator><link href="https://amygdala.github.io/gcp_blog/feed.xml" rel="self" type="application/atom+xml" /><link href="https://amygdala.github.io/gcp_blog/" rel="alternate" type="text/html" /><updated>2020-07-14T16:43:44-05:00</updated><id>https://amygdala.github.io/gcp_blog/feed.xml</id><title type="html">Amy on GCP</title><subtitle>Using Google Cloud Platform</subtitle><entry><title type="html">Training an AutoML Tables model with BigQuery ML</title><link href="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html" rel="alternate" type="text/html" title="Training an AutoML Tables model with BigQuery ML" /><published>2020-07-14T00:00:00-05:00</published><updated>2020-07-14T00:00:00-05:00</updated><id>https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/automl/bigquery/2020/07/14/bqml_tables.html">&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://cloud.google.com/bigquery-ml/docs&quot;&gt;BigQuery ML&lt;/a&gt; (BQML) enables users to create and execute machine learning models in &lt;a href=&quot;https://cloud.google.com/bigquery/docs&quot;&gt;BigQuery&lt;/a&gt; by using SQL queries. &amp;lt;The goal is to democratize machine learning by enabling SQL practitioners to build models using their existing tools and to increase development speed by eliminating the need for data movement.&amp;gt;&lt;/p&gt;
 
@@ -56,7 +56,10 @@
 
 &lt;p&gt;(If you’ve taken a look at the &lt;code class=&quot;highlighter-rouge&quot;&gt;bikes_weather&lt;/code&gt; table, you might notice that the &lt;code class=&quot;highlighter-rouge&quot;&gt;SELECT&lt;/code&gt; clause does not include the &lt;code class=&quot;highlighter-rouge&quot;&gt;bike_id&lt;/code&gt; column. A previously-run AutoML Tables analysis of the &lt;a href=&quot;https://cloud.google.com/automl-tables/docs/evaluate#evaluation_metrics_for_regression_models&quot;&gt;global feature importance of the dataset fields&lt;/a&gt; indicated that &lt;code class=&quot;highlighter-rouge&quot;&gt;bike_id&lt;/code&gt; had negligible impact, so we won’t use it for this model).&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;../images/global_feature_impt.png&quot; alt=&quot;global feature importance rankings&quot; /&gt;&lt;/p&gt;
+&lt;figure&gt;
+&lt;a href=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/global_feature_impt.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/global_feature_impt.png&quot; /&gt;&lt;/a&gt;
+&lt;figcaption&gt;&lt;br /&gt;&lt;i&gt;Global feature importance rankings.&lt;/i&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
 
 &lt;h2 id=&quot;evaluating-your-trained-custom-model&quot;&gt;Evaluating your trained custom model&lt;/h2&gt;
 &lt;p&gt;After the training has completed, you can evaluate your custom model.  The BigQuery SQL to do that looks like this (again, substitute your own project, dataset, and model name):&lt;/p&gt;
@@ -79,7 +82,10 @@
 &lt;p&gt;Note that via the &lt;code class=&quot;highlighter-rouge&quot;&gt;FARM_FINGERPRINT&lt;/code&gt; function, we’re using a different split for evaluation than we used for training.
 The evaluation results should look something like the following:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;../images/bqml_model_eval.png&quot; alt=&quot;model evaluation results&quot; /&gt;&lt;/p&gt;
+&lt;figure&gt;
+&lt;a href=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png&quot; width=&quot;70%&quot; /&gt;&lt;/a&gt;
+&lt;figcaption&gt;&lt;br /&gt;&lt;i&gt;Model evaluation results.&lt;/i&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
 
 &lt;h3 id=&quot;did-our-schema-hints-help&quot;&gt;Did our schema hints help?&lt;/h3&gt;
 
@@ -109,7 +115,10 @@ To try this yourself, create another differently-named model as shown in the tra
 
 &lt;p&gt;When I evaluated this second model, which kept the station IDs and day of week as numerics, the results showed that this model was somewhat less accurate:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;../images/bqml_model_2_eval.png&quot; alt=&quot;eval results for model 2&quot; /&gt;&lt;/p&gt;
+&lt;figure&gt;
+&lt;a href=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png&quot; width=&quot;70%&quot; /&gt;&lt;/a&gt;
+&lt;figcaption&gt;&lt;br /&gt;&lt;i&gt;Evaluation results for the model that did not cast categorical numerics to strings.&lt;/i&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
 
 &lt;h2 id=&quot;using-your-bqml-automl-tables-model-for-prediction&quot;&gt;Using your BQML AutoML Tables model for prediction&lt;/h2&gt;
 
@@ -126,7 +135,10 @@ Here’s an example of how to do that.  Via the &lt;code class=&quot;highlighter
 
 &lt;p&gt;The prediction results will look something like this:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;../images/bqml_prediction_results.png&quot; alt=&quot;prediction results&quot; /&gt;&lt;/p&gt;
+&lt;figure&gt;
+&lt;a href=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png&quot; width=&quot;90%&quot; /&gt;&lt;/a&gt;
+&lt;figcaption&gt;&lt;br /&gt;&lt;i&gt;Global feature importance rankings.&lt;/i&gt;&lt;/figcaption&gt;
+&lt;/figure&gt;
 
 &lt;p&gt;Note that while the query above is “standalone”, you can of course access model prediction results as part of a larger BigQuery query too.&lt;/p&gt;
 
@@ -522,9 +534,7 @@ limitations under the License.&lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;/div&gt;</content><author><name></name></author><summary type="html"></summary></entry><entry><title type="html">Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines</title><link href="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" rel="alternate" type="text/html" title="Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines" /><published>2020-04-22T00:00:00-05:00</published><updated>2020-04-22T00:00:00-05:00</updated><id>https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html">&lt;h1 id=&quot;automl-tables-end-to-end-workflow-on-cloud-ai-platform-pipelines&quot;&gt;AutoML Tables: end-to-end workflow on Cloud AI Platform Pipelines&lt;/h1&gt;
-
-&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+&lt;/div&gt;</content><author><name></name></author><summary type="html"></summary></entry><entry><title type="html">Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines</title><link href="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html" rel="alternate" type="text/html" title="Creating an AutoML Tables end-to-end workflow on Cloud AI Platform Pipelines" /><published>2020-04-22T00:00:00-05:00</published><updated>2020-04-22T00:00:00-05:00</updated><id>https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/kfp/automl/2020/04/22/automltables_kfp_e2e.html">&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://cloud.google.com/automl-tables/docs/&quot;&gt;AutoML Tables&lt;/a&gt; lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data.&lt;/p&gt;
 
@@ -875,7 +885,7 @@ That doesn’t mean that an end-user necessarily needs to have Docker installed.
     &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;In this manner it is straightforward to put together a pipeline from your component definitions.  Just don’t forget to recompile the pipeline script (to generate its corresponding &lt;code class=&quot;highlighter-rouge&quot;&gt;.tar.gz&lt;/code&gt; archive) if any of its component definitions changed, e.g. &lt;code class=&quot;highlighter-rouge&quot;&gt;python tables_pipeline_caip.py&lt;/code&gt;.&lt;/p&gt;</content><author><name></name></author><summary type="html">AutoML Tables: end-to-end workflow on Cloud AI Platform Pipelines</summary></entry><entry><title type="html">Getting explanations for AutoML Tables predictions</title><link href="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html" rel="alternate" type="text/html" title="Getting explanations for AutoML Tables predictions" /><published>2020-04-17T00:00:00-05:00</published><updated>2020-04-17T00:00:00-05:00</updated><id>https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html">&lt;!--
+&lt;p&gt;In this manner it is straightforward to put together a pipeline from your component definitions.  Just don’t forget to recompile the pipeline script (to generate its corresponding &lt;code class=&quot;highlighter-rouge&quot;&gt;.tar.gz&lt;/code&gt; archive) if any of its component definitions changed, e.g. &lt;code class=&quot;highlighter-rouge&quot;&gt;python tables_pipeline_caip.py&lt;/code&gt;.&lt;/p&gt;</content><author><name></name></author><summary type="html">Introduction</summary></entry><entry><title type="html">Getting explanations for AutoML Tables predictions</title><link href="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html" rel="alternate" type="text/html" title="Getting explanations for AutoML Tables predictions" /><published>2020-04-17T00:00:00-05:00</published><updated>2020-04-17T00:00:00-05:00</updated><id>https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/xai/automl/jupyter/2020/04/17/automl_tables_xai.html">&lt;!--
 #################################################
 ### THIS FILE WAS AUTOGENERATED! DO NOT EDIT! ###
 #################################################

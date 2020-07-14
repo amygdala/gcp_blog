@@ -103,7 +103,7 @@ window.onload = wrap_img;
        • <span class="read-time" title="Estimated read time">
     
     
-      6 min read
+      7 min read
     
 </span></p>
 
@@ -201,7 +201,10 @@ window.onload = wrap_img;
 
 <p>(If you’ve taken a look at the <code class="highlighter-rouge">bikes_weather</code> table, you might notice that the <code class="highlighter-rouge">SELECT</code> clause does not include the <code class="highlighter-rouge">bike_id</code> column. A previously-run AutoML Tables analysis of the <a href="https://cloud.google.com/automl-tables/docs/evaluate#evaluation_metrics_for_regression_models">global feature importance of the dataset fields</a> indicated that <code class="highlighter-rouge">bike_id</code> had negligible impact, so we won’t use it for this model).</p>
 
-<p><img src="../images/global_feature_impt.png" alt="global feature importance rankings"></p>
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/global_feature_impt.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/global_feature_impt.png"></a>
+<figcaption><br><i>Global feature importance rankings.</i></figcaption>
+</figure>
 
 <h2 id="evaluating-your-trained-custom-model">
 <a class="anchor" href="#evaluating-your-trained-custom-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluating your trained custom model</h2>
@@ -225,7 +228,10 @@ window.onload = wrap_img;
 <p>Note that via the <code class="highlighter-rouge">FARM_FINGERPRINT</code> function, we’re using a different split for evaluation than we used for training.
 The evaluation results should look something like the following:</p>
 
-<p><img src="../images/bqml_model_eval.png" alt="model evaluation results"></p>
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" width="70%"></a>
+<figcaption><br><i>Model evaluation results.</i></figcaption>
+</figure>
 
 <h3 id="did-our-schema-hints-help">
 <a class="anchor" href="#did-our-schema-hints-help" aria-hidden="true"><span class="octicon octicon-link"></span></a>Did our schema hints help?</h3>
@@ -256,7 +262,10 @@ To try this yourself, create another differently-named model as shown in the tra
 
 <p>When I evaluated this second model, which kept the station IDs and day of week as numerics, the results showed that this model was somewhat less accurate:</p>
 
-<p><img src="../images/bqml_model_2_eval.png" alt="eval results for model 2"></p>
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_2_eval.png" width="70%"></a>
+<figcaption><br><i>Evaluation results for the model that did not cast categorical numerics to strings.</i></figcaption>
+</figure>
 
 <h2 id="using-your-bqml-automl-tables-model-for-prediction">
 <a class="anchor" href="#using-your-bqml-automl-tables-model-for-prediction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using your BQML AutoML Tables model for prediction</h2>
@@ -274,7 +283,10 @@ Here’s an example of how to do that.  Via the <code class="highlighter-rouge">
 
 <p>The prediction results will look something like this:</p>
 
-<p><img src="../images/bqml_prediction_results.png" alt="prediction results"></p>
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_prediction_results.png" width="90%"></a>
+<figcaption><br><i>Global feature importance rankings.</i></figcaption>
+</figure>
 
 <p>Note that while the query above is “standalone”, you can of course access model prediction results as part of a larger BigQuery query too.</p>
 
