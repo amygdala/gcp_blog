@@ -9,14 +9,14 @@ title: Training an AutoML Tables model with BigQuery ML
 
 ## Introduction
 
-[BigQuery ML][1] (BQML) enables users to create and execute machine learning models in [BigQuery][2] by using SQL queries. \<The goal is to democratize machine learning by enabling SQL practitioners to build models using their existing tools and to increase development speed by eliminating the need for data movement.\>
+[BigQuery ML][1] (BQML) enables users to create and execute machine learning models in [BigQuery][2] by using SQL queries.
 
 [AutoML Tables][3] lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data, and [explain prediction results][4]. It’s useful for a wide range of machine learning tasks, such as asset valuations, fraud detection, credit risk analysis, customer retention prediction, analyzing item layouts in stores, [solving comment section spam problems][5], [quickly categorizing audio content][6], [predicting rental demand][7], and more.
 ([This blog post][8] gives more detail on many of its capabilities).
 
 Recently, BQML added [support for AutoML Tables models][9].  This makes it easy to train Tables models on your BigQuery data using standard SQL, directly from the BigQuery UI (or API), and to evaluate and use the models for prediction directly via SQL as well.
 
-In this post, we’ll take a look at how to do this, and discuss a few tips as well.
+In this post, we’ll take a look at how to do this, and show a few tips as well.
 
 ## About the dataset and modeling task
 
@@ -26,7 +26,7 @@ Using this dataset, we’ll build a _regression_ model to predict the `duration`
 
 ## Specifying the training, eval, and test datasets
 
-For BQML, we want to first figure out how we'll define our dataset splits.  We’d like to create training, validation, and test data, but we don’t want the any of those datasets to be drawn from sequential rows. There’s an easy way to do this in a repeatable manner by using the [Farm Hash algorithm][14], implemented as the `FARM_FINGERPRINT` BigQuery SQL function.  We’d like to create an 80/10/10 split.
+For BQML, we want to first figure out how we'll define our dataset splits.  We’d like to create training, validation, and test datasets from the source table, and we don’t want to just grab a sequential slice of the table for each. There’s an easy way to accomplish this in a repeatable manner by using the [Farm Hash algorithm][14], implemented as the `FARM_FINGERPRINT` BigQuery SQL function.  We’d like to create an 80/10/10 split.
 
 So, the query to generate training data will include a clause like this: 
 ```sql
