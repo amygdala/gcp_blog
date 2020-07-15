@@ -24,21 +24,25 @@ The [Cloud Public Datasets Program][10] makes available public datasets that are
 
 Using this dataset, we’ll build a _regression_ model to predict the `duration` of a bike rental based on information about the start and end rental stations, the day of the week, the weather on that day, and other data. (If we were running a bike rental company, we could use these predictions—and their explanations—to help us anticipate demand and even plan how to stock each location).
 
-## Specifying the training, eval, and test datasets
+## Specifying training, eval, and test datasets
 
-For BQML, we want to first figure out how we'll define our dataset splits.  We’d like to create training, validation, and test datasets from the source table, and we don’t want to just grab a sequential slice of the table for each. There’s an easy way to accomplish this in a repeatable manner by using the [Farm Hash algorithm][14], implemented as the `FARM_FINGERPRINT` BigQuery SQL function.  We’d like to create an 80/10/10 split.
+AutoML Tables will split the data you send it into its own training/test/validation sets.
+
+> Note: it's also possible to specify the data split column as a BQML model creation option: `DATA_SPLIT_COL = string_value`.
+`string_value` is one of the columns in the training data and should be either a timestamp or string column. See the [documentation](https://cloud.google.com/bigquery-ml/docs/reference/standard-sql/bigqueryml-syntax-create-automl#create_model_syntax) for more detail.
+
+For BQML, we’ll split the data into a set to use for the training process, and reserve a 'test' dataset that AutoML training never sees. We don’t want to just grab a sequential slice of the table for each. There’s an easy way to accomplish this in a repeatable manner by using the [Farm Hash algorithm][14], implemented as the `FARM_FINGERPRINT` BigQuery SQL function.  We’d like to create a 90/10 split.
 
 So, the query to generate training data will include a clause like this: 
 ```sql
-WHERE ABS(MOD(FARM_FINGERPRINT(timestamp), 10)) < 8 
+WHERE ABS(MOD(FARM_FINGERPRINT(timestamp), 10)) < 9
 ```
-Similarly, the query to generate the eval set will use this clause:
+Similarly, the query to generate the 'test' set will use this clause:
 ```sql
-WHERE  ABS(MOD(FARM_FINGERPRINT(timestamp), 10)) = 8
+WHERE  ABS(MOD(FARM_FINGERPRINT(timestamp), 10)) = 9
 ```
-… and the query for the test set will use `= 9`.  
 
-Using this approach, we can build `SELECT` clauses with reproducible results that givve us datasets with the split proportions we want.
+Using this approach, we can build `SELECT` clauses with reproducible results that give us datasets with the split proportions we want.
 
 ## Tables schema configuration and BQML
 
@@ -63,7 +67,7 @@ AS SELECT
   cast(start_station_id as STRING) as ssid, cast(end_station_id as STRING) as esid
 FROM `aju-dev-demos.london_bikes_weather.bikes_weather`
 WHERE
-ABS(MOD(FARM_FINGERPRINT(cast(ts as STRING)), 10)) < 8 
+ABS(MOD(FARM_FINGERPRINT(cast(ts as STRING)), 10)) < 9
 ```
 
 Note the casts to `STRING` and the use of `FARM_FINGERPRINT` as discussed above.
@@ -76,7 +80,15 @@ Note the casts to `STRING` and the use of `FARM_FINGERPRINT` as discussed above.
 </figure>
 
 ## Evaluating your trained custom model
-After the training has completed, you can evaluate your custom model.  The BigQuery SQL to do that looks like this (again, substitute your own project, dataset, and model name):
+
+After the training has completed, you can view the evaluation metrics for your custom model, and also run your own evaluation query yourself.  You can view the evaluation metrics generated during the training process by clicking on the model name in the BigQuery UI, then click on the "Evaluation" tab in the central panel.  It will look something like this:
+
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval.png" width="40%"/></a>
+<figcaption><br/><i>Model evaluation metrics generated during the training process</i></figcaption>
+</figure>
+
+The BigQuery SQL to run your own evaluation query for the trained model looks like this (again, substitute your own project, dataset, and model name):
 
 ```sql
 SELECT
@@ -90,12 +102,13 @@ SELECT
 FROM
   `aju-dev-demos.london_bikes_weather.bikes_weather`
 WHERE
- ABS(MOD(FARM_FINGERPRINT(cast(ts as STRING)), 10)) = 8
+ ABS(MOD(FARM_FINGERPRINT(cast(ts as STRING)), 10)) = 9
  ))
 ```
 
-Note that via the `FARM_FINGERPRINT` function, we’re using a different split for evaluation than we used for training.
-The evaluation results should look something like the following:
+Note that via the `FARM_FINGERPRINT` function, we’re using a different dataset for evaluation than we used for training.
+The evaluation results should look something like the following.  The metrics will be a bit different from those above, since we’re using different data than AutoML Tables used for its eval split.
+
 
 <figure>
 <a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_model_eval.png" /></a>
@@ -126,7 +139,7 @@ SELECT
 FROM
   `aju-dev-demos.london_bikes_weather.bikes_weather`
 WHERE
- ABS(MOD(FARM_FINGERPRINT(cast(ts as STRING)), 10)) = 8
+ ABS(MOD(FARM_FINGERPRINT(cast(ts as STRING)), 10)) = 9
  ))
 ```
 
@@ -141,7 +154,7 @@ When I evaluated this second model, which kept the station IDs and day of week a
 ## Using your BQML AutoML Tables model for prediction
 
 Once your model is trained, and you’ve ascertained it’s accurate enough, you can use it for prediction.
-Here’s an example of how to do that.  Via the `FARM_FINGERPRINT` function, we’re drawing from our third “test” split, but because the resultant dataset is large, we’re just grabbing a few rows (200) for the query below:
+Here’s an example of how to do that.  Via the `FARM_FINGERPRINT` function, we’re drawing from our “test” split, but because the resultant dataset is large, we’re just grabbing a few rows (200) for the query below:
 
 ```sql
 SELECT * FROM ML.PREDICT(MODEL `YOUR-PROJECT-ID.YOUR-DATASET.YOUR-MODEL-NAME`, 
