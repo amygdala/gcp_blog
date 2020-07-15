@@ -162,7 +162,12 @@ window.onload = wrap_img;
 
 <p>AutoML Tables will split the data you send it into its own training/test/validation sets.</p>
 
-<p>For BQML, we’ll split the data into a training set, and reserve a ‘test’ dataset that AutoML training never sees. We don’t want to just grab a sequential slice of the table for each. There’s an easy way to accomplish this in a repeatable manner by using the <a href="https://github.com/google/farmhash">Farm Hash algorithm</a>, implemented as the <code class="highlighter-rouge">FARM_FINGERPRINT</code> BigQuery SQL function.  We’d like to create a 90/10 split.</p>
+<blockquote>
+  <p>Note: it’s also possible to specify the data split column as a BQML model creation option: <code class="highlighter-rouge">DATA_SPLIT_COL = string_value</code>.
+<code class="highlighter-rouge">string_value</code> is one of the columns in the training data and should be either a timestamp or string column. See the <a href="https://cloud.google.com/bigquery-ml/docs/reference/standard-sql/bigqueryml-syntax-create-automl#create_model_syntax">documentation</a> for more detail.</p>
+</blockquote>
+
+<p>For BQML, we’ll split the data into a set to use for the training process, and reserve a ‘test’ dataset that AutoML training never sees. We don’t want to just grab a sequential slice of the table for each. There’s an easy way to accomplish this in a repeatable manner by using the <a href="https://github.com/google/farmhash">Farm Hash algorithm</a>, implemented as the <code class="highlighter-rouge">FARM_FINGERPRINT</code> BigQuery SQL function.  We’d like to create a 90/10 split.</p>
 
 <p>So, the query to generate training data will include a clause like this:</p>
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span> <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">9</span>
