@@ -128,7 +128,7 @@ window.onload = wrap_img;
     <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#introduction">Introduction</a></li>
 <li class="toc-entry toc-h2"><a href="#about-the-dataset-and-modeling-task">About the dataset and modeling task</a></li>
-<li class="toc-entry toc-h2"><a href="#specifying-the-training-eval-and-test-datasets">Specifying the training, eval, and test datasets</a></li>
+<li class="toc-entry toc-h2"><a href="#specifying-training-eval-and-test-datasets">Specifying training, eval, and test datasets</a></li>
 <li class="toc-entry toc-h2"><a href="#tables-schema-configuration-and-bqml">Tables schema configuration and BQML</a></li>
 <li class="toc-entry toc-h2"><a href="#training-the-automl-tables-model-via-bqml">Training the AutoML Tables model via BQML</a></li>
 <li class="toc-entry toc-h2"><a href="#evaluating-your-trained-custom-model">Evaluating your trained custom model</a>
@@ -157,20 +157,21 @@ window.onload = wrap_img;
 
 <p>Using this dataset, we’ll build a <em>regression</em> model to predict the <code class="highlighter-rouge">duration</code> of a bike rental based on information about the start and end rental stations, the day of the week, the weather on that day, and other data. (If we were running a bike rental company, we could use these predictions—and their explanations—to help us anticipate demand and even plan how to stock each location).</p>
 
-<h2 id="specifying-the-training-eval-and-test-datasets">
-<a class="anchor" href="#specifying-the-training-eval-and-test-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Specifying the training, eval, and test datasets</h2>
+<h2 id="specifying-training-eval-and-test-datasets">
+<a class="anchor" href="#specifying-training-eval-and-test-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Specifying training, eval, and test datasets</h2>
 
-<p>For BQML, we want to first figure out how we’ll define our dataset splits.  We’d like to create training, validation, and test datasets from the source table, and we don’t want to just grab a sequential slice of the table for each. There’s an easy way to accomplish this in a repeatable manner by using the <a href="https://github.com/google/farmhash">Farm Hash algorithm</a>, implemented as the <code class="highlighter-rouge">FARM_FINGERPRINT</code> BigQuery SQL function.  We’d like to create an 80/10/10 split.</p>
+<p>AutoML Tables will split the data you send it into its own training/test/validation sets.</p>
+
+<p>For BQML, we’ll split the data into a training set, and reserve a ‘test’ dataset that AutoML training never sees. We don’t want to just grab a sequential slice of the table for each. There’s an easy way to accomplish this in a repeatable manner by using the <a href="https://github.com/google/farmhash">Farm Hash algorithm</a>, implemented as the <code class="highlighter-rouge">FARM_FINGERPRINT</code> BigQuery SQL function.  We’d like to create a 90/10 split.</p>
 
 <p>So, the query to generate training data will include a clause like this:</p>
-<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span> <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">8</span> 
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span> <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">9</span>
 </code></pre></div></div>
-<p>Similarly, the query to generate the eval set will use this clause:</p>
-<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span>  <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">8</span>
+<p>Similarly, the query to generate the ‘test’ set will use this clause:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">WHERE</span>  <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="nb">timestamp</span><span class="p">),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">9</span>
 </code></pre></div></div>
-<p>… and the query for the test set will use <code class="highlighter-rouge">= 9</code>.</p>
 
-<p>Using this approach, we can build <code class="highlighter-rouge">SELECT</code> clauses with reproducible results that givve us datasets with the split proportions we want.</p>
+<p>Using this approach, we can build <code class="highlighter-rouge">SELECT</code> clauses with reproducible results that give us datasets with the split proportions we want.</p>
 
 <h2 id="tables-schema-configuration-and-bqml">
 <a class="anchor" href="#tables-schema-configuration-and-bqml" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tables schema configuration and BQML</h2>
@@ -196,7 +197,7 @@ window.onload = wrap_img;
   <span class="k">cast</span><span class="p">(</span><span class="n">start_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">ssid</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">end_station_id</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">esid</span>
 <span class="k">FROM</span> <span class="nv">`aju-dev-demos.london_bikes_weather.bikes_weather`</span>
 <span class="k">WHERE</span>
-<span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">8</span> 
+<span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">9</span>
 </code></pre></div></div>
 
 <p>Note the casts to <code class="highlighter-rouge">STRING</code> and the use of <code class="highlighter-rouge">FARM_FINGERPRINT</code> as discussed above.</p>
@@ -210,7 +211,15 @@ window.onload = wrap_img;
 
 <h2 id="evaluating-your-trained-custom-model">
 <a class="anchor" href="#evaluating-your-trained-custom-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluating your trained custom model</h2>
-<p>After the training has completed, you can evaluate your custom model.  The BigQuery SQL to do that looks like this (again, substitute your own project, dataset, and model name):</p>
+
+<p>After the training has completed, you can view the evaluation metrics for your custom model, and also run your own evaluation query yourself.  You can view the evaluation metrics generated during the training process by clicking on the model name in the BigQuery UI, then click on the “Evaluation” tab in the central panel.  It will look something like this:</p>
+
+<figure>
+<a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval"></a>
+<figcaption><br><i>Model evaluation metrics generated during the training process</i></figcaption>
+</figure>
+
+<p>The BigQuery SQL to run your own evaluation query for the trained model looks like this (again, substitute your own project, dataset, and model name):</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span>
 <span class="err"> </span> <span class="o">*</span>
@@ -223,11 +232,11 @@ window.onload = wrap_img;
 <span class="k">FROM</span>
 <span class="err"> </span> <span class="nv">`aju-dev-demos.london_bikes_weather.bikes_weather`</span>
 <span class="k">WHERE</span>
- <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">8</span>
+ <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">9</span>
  <span class="p">))</span>
 </code></pre></div></div>
 
-<p>Note that via the <code class="highlighter-rouge">FARM_FINGERPRINT</code> function, we’re using a different split for evaluation than we used for training.
+<p>Note that via the <code class="highlighter-rouge">FARM_FINGERPRINT</code> function, we’re using a different dataset for evaluation than we used for training.
 The evaluation results should look something like the following:</p>
 
 <figure>
@@ -258,7 +267,7 @@ To try this yourself, create another differently-named model as shown in the tra
 <span class="k">FROM</span>
 <span class="err"> </span> <span class="nv">`aju-dev-demos.london_bikes_weather.bikes_weather`</span>
 <span class="k">WHERE</span>
- <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">8</span>
+ <span class="k">ABS</span><span class="p">(</span><span class="k">MOD</span><span class="p">(</span><span class="n">FARM_FINGERPRINT</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">ts</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)),</span> <span class="mi">10</span><span class="p">))</span> <span class="o">=</span> <span class="mi">9</span>
  <span class="p">))</span>
 </code></pre></div></div>
 
@@ -273,7 +282,7 @@ To try this yourself, create another differently-named model as shown in the tra
 <a class="anchor" href="#using-your-bqml-automl-tables-model-for-prediction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using your BQML AutoML Tables model for prediction</h2>
 
 <p>Once your model is trained, and you’ve ascertained it’s accurate enough, you can use it for prediction.
-Here’s an example of how to do that.  Via the <code class="highlighter-rouge">FARM_FINGERPRINT</code> function, we’re drawing from our third “test” split, but because the resultant dataset is large, we’re just grabbing a few rows (200) for the query below:</p>
+Here’s an example of how to do that.  Via the <code class="highlighter-rouge">FARM_FINGERPRINT</code> function, we’re drawing from our “test” split, but because the resultant dataset is large, we’re just grabbing a few rows (200) for the query below:</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">ML</span><span class="p">.</span><span class="n">PREDICT</span><span class="p">(</span><span class="n">MODEL</span> <span class="nv">`YOUR-PROJECT-ID.YOUR-DATASET.YOUR-MODEL-NAME`</span><span class="p">,</span> 
 <span class="p">(</span><span class="k">SELECT</span> <span class="err"> </span> <span class="n">duration</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="n">day_of_week</span> <span class="k">as</span> <span class="n">STRING</span><span class="p">)</span> <span class="k">as</span> <span class="n">dow</span><span class="p">,</span> <span class="n">start_latitude</span><span class="p">,</span> <span class="n">start_longitude</span><span class="p">,</span> <span class="n">end_latitude</span><span class="p">,</span> 
