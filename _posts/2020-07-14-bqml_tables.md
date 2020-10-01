@@ -14,7 +14,7 @@ title: Training an AutoML Tables model with BigQuery ML
 [AutoML Tables][3] lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data, and [explain prediction results][4]. It’s useful for a wide range of machine learning tasks, such as asset valuations, fraud detection, credit risk analysis, customer retention prediction, analyzing item layouts in stores, [solving comment section spam problems][5], [quickly categorizing audio content][6], [predicting rental demand][7], and more.
 ([This blog post][8] gives more detail on many of its capabilities).
 
-Recently, BQML added [support for AutoML Tables models][9].  This makes it easy to train Tables models on your BigQuery data using standard SQL, directly from the BigQuery UI (or API), and to evaluate and use the models for prediction directly via SQL as well.
+Recently, BQML added [support for AutoML Tables models][9] (in Beta).  This makes it easy to train Tables models on your BigQuery data using standard SQL, directly from the BigQuery UI (or API), and to evaluate and use the models for prediction directly via SQL as well.
 
 In this post, we’ll take a look at how to do this, and show a few tips as well.
 
@@ -87,6 +87,8 @@ After the training has completed, you can view the evaluation metrics for your c
 <a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval.png" width="40%"/></a>
 <figcaption><br/><i>Model evaluation metrics generated during the training process</i></figcaption>
 </figure>
+
+(At time of writing, some of this data is incomplete, but that will change soon).
 
 The BigQuery SQL to run your own evaluation query for the trained model looks like this (again, substitute your own project, dataset, and model name):
 
