@@ -146,7 +146,7 @@ window.onload = wrap_img;
 <p><a href="https://cloud.google.com/automl-tables/docs/">AutoML Tables</a> lets you automatically build, analyze, and deploy state-of-the-art machine learning models using your own structured data, and <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">explain prediction results</a>. It’s useful for a wide range of machine learning tasks, such as asset valuations, fraud detection, credit risk analysis, customer retention prediction, analyzing item layouts in stores, <a href="https://cloud.google.com/blog/products/ai-machine-learning/how-kaggle-solved-a-spam-problem-using-automl">solving comment section spam problems</a>, <a href="https://cloud.google.com/blog/products/ai-machine-learning/using-ai-to-scale-audio-content-categorization">quickly categorizing audio content</a>, <a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">predicting rental demand</a>, and more.
 (<a href="https://cloud.google.com/blog/products/ai-machine-learning/new-automl-features-and-end-to-end-workflows-on-ai-platform-pipelines">This blog post</a> gives more detail on many of its capabilities).</p>
 
-<p>Recently, BQML added <a href="https://cloud.google.com/bigquery-ml/docs/reference/standard-sql/bigqueryml-syntax-create-automl#limitations">support for AutoML Tables models</a>.  This makes it easy to train Tables models on your BigQuery data using standard SQL, directly from the BigQuery UI (or API), and to evaluate and use the models for prediction directly via SQL as well.</p>
+<p>Recently, BQML added <a href="https://cloud.google.com/bigquery-ml/docs/reference/standard-sql/bigqueryml-syntax-create-automl#limitations">support for AutoML Tables models</a> (in Beta).  This makes it easy to train Tables models on your BigQuery data using standard SQL, directly from the BigQuery UI (or API), and to evaluate and use the models for prediction directly via SQL as well.</p>
 
 <p>In this post, we’ll take a look at how to do this, and show a few tips as well.</p>
 
@@ -223,6 +223,8 @@ window.onload = wrap_img;
 <a href="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval.png" target="_blank"><img src="https://raw.githubusercontent.com/amygdala/gcp_blog/master/images/bqml_training_eval.png" width="40%"></a>
 <figcaption><br><i>Model evaluation metrics generated during the training process</i></figcaption>
 </figure>
+
+<p>(At time of writing, some of this data is incomplete, but that will change soon).</p>
 
 <p>The BigQuery SQL to run your own evaluation query for the trained model looks like this (again, substitute your own project, dataset, and model name):</p>
 
