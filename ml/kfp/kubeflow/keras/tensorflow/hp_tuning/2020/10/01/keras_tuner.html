@@ -103,7 +103,7 @@ window.onload = wrap_img;
        • <span class="read-time" title="Estimated read time">
     
     
-      7 min read
+      8 min read
     
 </span></p>
 
@@ -143,30 +143,33 @@ window.onload = wrap_img;
 </ul>
 </li>
 <li class="toc-entry toc-h2"><a href="#keras-tuner-in-distributed-mode-on-gke-with-preemptible-vms">Keras tuner in distributed mode on GKE with preemptible VMs</a></li>
-<li class="toc-entry toc-h2"><a href="#defining-the-hp-tuning--training-workflow-as-a-pipeline">Defining the HP Tuning + training workflow as a pipeline</a></li>
-<li class="toc-entry toc-h2"><a href="#running-the-example-pipeline">Running the example pipeline</a></li>
-<li class="toc-entry toc-h2"><a href="#whats-next">What’s next?…</a></li>
+<li class="toc-entry toc-h2"><a href="#defining-the-hp-tuning--training-workflow-as-a-pipeline">Defining the HP Tuning + training workflow as a pipeline</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#running-the-example-pipeline">Running the example pipeline</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#whats-next">What’s next?</a></li>
 </ul><h2 id="introduction">
 <a class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
 
-<p>The performance of a machine learning model is often crucially dependent on the choice of good <a href="https://en.wikipedia.org/wiki/Hyperparameter_(machine_learning)">hyperparameters</a>. For models of any complexity, relying on trial and error to find good values for these parameters does not scale. This tutorial shows how to use <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-cloud-ai-platform-pipelines">Cloud AI Platform Pipelines</a>  in conjunction with <a href="https://blog.tensorflow.org/2020/01/hyperparameter-tuning-with-keras-tuner.html">Keras Tuner</a> to build a hyperparameter-tuning workflow that uses distributed HP search.</p>
+<p>The performance of a machine learning model is often crucially dependent on the choice of good <a href="https://en.wikipedia.org/wiki/Hyperparameter_(machine_learning)">hyperparameters</a>. For models of any complexity, relying on trial and error to find good values for these parameters does not scale. This tutorial shows how to use <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-cloud-ai-platform-pipelines"><strong>Cloud AI Platform Pipelines</strong></a>  in conjunction with the <a href="https://blog.tensorflow.org/2020/01/hyperparameter-tuning-with-keras-tuner.html"><strong>Keras Tuner</strong></a> libraries to build a <strong>hyperparameter-tuning workflow</strong> that runs a distributed HP search on GKE.</p>
 
 <p><a href="https://cloud.google.com/ai-platform/pipelines/docs">Cloud AI Platform Pipelines</a>, currently in Beta, provides a way to deploy robust, repeatable machine learning pipelines along with monitoring, auditing, version tracking, and reproducibility, and gives you an easy-to-install, secure execution environment for your ML workflows. AI Platform Pipelines is based on <a href="https://www.kubeflow.org/docs/pipelines/">Kubeflow Pipelines</a> (KFP) installed on a <a href="https://cloud.google.com/kubernetes-engine">Google Kubernetes Engine (GKE)</a> cluster, and can run pipelines specified via both the KFP and TFX SDKs. See <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-cloud-ai-platform-pipelines">this blog post</a> for more detail on the Pipelines tech stack.
 You can create an AI Platform Pipelines installation with just a few clicks. After installing, you access AI Platform Pipelines by visiting the AI Platform Panel in the <a href="https://console.cloud.google.com/">Cloud Console</a>.</p>
 
 <p><a href="https://blog.tensorflow.org/2020/01/hyperparameter-tuning-with-keras-tuner.html">Keras Tuner</a> is a distributable hyperparameter optimization framework. Keras Tuner makes it easy to define a search space and leverage included algorithms to find the best hyperparameter values. It comes with several search  algorithms built-in, and is also designed to be easy for researchers to extend in order to experiment with new search algorithms.  It is straightforward to run the Keras Tuner in <a href="https://keras-team.github.io/keras-tuner/tutorials/distributed-tuning/">distributed search mode</a>, which we’ll leverage for this example.</p>
 
-<p>The intent of a HP tuning search is typically not to do full training for each parameter combination, but to find the best starting points.  The number of epochs run in the HP search trials are typically smaller than that used in the full training. So, an HP tuning-based ML workflow could include:</p>
+<p>The intent of a HP tuning search is typically not to do full training for each parameter combination, but to find the best starting points.  The number of epochs run in the HP search trials are typically smaller than that used in the full training. So, an HP tuning-based ML workflow could include these steps:</p>
 
 <ul>
   <li>perform a distributed HP tuning search, and obtain the results</li>
-  <li>do concurrent model training runs for each of the best N parameter configurations, and export the model for each</li>
-  <li>serve (some of) the resultant models (often after model evaluation).</li>
+  <li>do concurrent full training runs for each of the best <code class="highlighter-rouge">N</code> parameter configurations, and export (save) the model for each</li>
+  <li>serve (some of) the resultant models, often after model evaluation.</li>
 </ul>
 
-<p>As mentioned above, a Cloud AI Platform (KFP) Pipeline runs under the hood on a GKE cluster.  This makes it straightforward to implement this workflow— including the distributed HP search and model serving— so that you just need to launch a pipeline job to kick it off.</p>
+<p>As indicated above, a Cloud AI Platform (KFP) Pipeline runs under the hood on a GKE cluster.  This makes it straightforward to implement this workflow— leveraging GKE for the distributed HP search and model serving— so that you just need to launch a pipeline job to kick it off.</p>
 
-<p>This post highlights an example pipeline that does that. The example also shows how to use <strong>preemptible</strong> GPU-enabled VMS for the HP search, to reduce costs; and how to use <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a> to deploy the trained model(s) on the same cluster for serving. As part of the process, we’ll see how GKE provides a scalable, resilient platform with easily-configured use of accelerators.</p>
+<p>This post highlights an <a href="https://github.com/amygdala/code-snippets/tree/master/ml/kubeflow-pipelines/keras_tuner">example pipeline</a> that does that. The example also shows how to use <strong>preemptible</strong> GPU-enabled VMS for the HP search, to reduce costs; and how to use <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a> to deploy the trained model(s) on the same cluster for serving. As part of the process, we’ll see how GKE provides a scalable, resilient platform with easily-configured use of accelerators.</p>
 
 <h2 id="about-the-dataset-and-modeling-task">
 <a class="anchor" href="#about-the-dataset-and-modeling-task" aria-hidden="true"><span class="octicon octicon-link"></span></a>About the dataset and modeling task</h2>
@@ -174,19 +177,50 @@ You can create an AI Platform Pipelines installation with just a few clicks. Aft
 <h3 id="the-dataset">
 <a class="anchor" href="#the-dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>The dataset</h3>
 
-<p>The <a href="https://cloud.google.com/bigquery/public-data/">Cloud Public Datasets Program</a> makes available public datasets that are useful for experimenting with machine learning. Just as we did in our “<a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">Explaining model predictions on structured data</a>” post, we’ll use data that is essentially a join of two public datasets stored in <a href="https://cloud.google.com/bigquery/">BigQuery</a>: <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=london_bicycles&amp;page=dataset">London Bike rentals</a> and <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=noaa_gsod&amp;page=dataset">NOAA weather data</a>, with some additional processing to clean up outliers and derive additional GIS and day-of-week fields.</p>
+<p>The <a href="https://cloud.google.com/bigquery/public-data/">Cloud Public Datasets Program</a> makes available public datasets that are useful for experimenting with machine learning. Just as with this
+“<a href="https://cloud.google.com/blog/products/ai-machine-learning/explaining-model-predictions-structured-data">Explaining model predictions on structured data</a>” post, we’ll use data that is essentially a join of two public datasets stored in <a href="https://cloud.google.com/bigquery/">BigQuery</a>: <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=london_bicycles&amp;page=dataset">London Bike rentals</a> and <a href="https://console.cloud.google.com/bigquery?p=bigquery-public-data&amp;d=noaa_gsod&amp;page=dataset">NOAA weather data</a>, with some additional processing to clean up outliers and derive additional GIS and day-of-week fields.</p>
 
 <h3 id="the-modeling-task-and-keras-model">
 <a class="anchor" href="#the-modeling-task-and-keras-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>The modeling task and Keras model</h3>
 
 <p>We’ll use this dataset to build a <a href="https://keras.io/">Keras</a> <em>regression model</em> to predict the <strong>duration</strong> of a bike rental based on information about the start and end stations, the day of the week, the weather on that day, and other data. If we were running a bike rental company, for example, these predictions—and their explanations—could help us anticipate demand and even plan how to stock each location.</p>
 
-<p>We’ll then use the Keras Tuner package to do an HP search using this model.</p>
+<p>We’ll build a parameterizable model architecture for this task (similar in structure to a <a href="https://ai.googleblog.com/2016/06/wide-deep-learning-better-together-with.html">“wide and deep”</a> model), then use the Keras Tuner package to do an HP search using this model structure, as well as doing full model training using the best HP set(s).</p>
 
 <h2 id="keras-tuner-in-distributed-mode-on-gke-with-preemptible-vms">
 <a class="anchor" href="#keras-tuner-in-distributed-mode-on-gke-with-preemptible-vms" aria-hidden="true"><span class="octicon octicon-link"></span></a>Keras tuner in distributed mode on GKE with preemptible VMs</h2>
 
-<p>The <a href="https://keras-team.github.io/keras-tuner/">Keras Tuner</a> supports running a hyperparameter search  in <a href="https://keras-team.github.io/keras-tuner/tutorials/distributed-tuning/">distributed mode</a>. 
+<p>With the Keras Tuner, you set up a HP tuning search along these lines (the code is from the <a href="https://github.com/amygdala/code-snippets/tree/master/ml/kubeflow-pipelines/keras_tuner">example</a>; other search algorithms are supported in addition to ‘random’):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tuner</span> <span class="o">=</span> <span class="n">RandomSearch</span><span class="p">(</span>
+    <span class="n">create_model</span><span class="p">,</span>
+    <span class="n">objective</span><span class="o">=</span><span class="s">'val_mae'</span><span class="p">,</span>
+    <span class="n">max_trials</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">max_trials</span><span class="p">,</span>
+    <span class="n">distribution_strategy</span><span class="o">=</span><span class="n">STRATEGY</span><span class="p">,</span>
+    <span class="n">executions_per_trial</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">executions_per_trial</span><span class="p">,</span>
+    <span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">tuner_dir</span><span class="p">,</span>
+    <span class="n">project_name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">tuner_proj</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>…where in the above, the <code class="highlighter-rouge">create_model</code> call takes takes an argument <code class="highlighter-rouge">hp</code> from which you can sample hyperparameters.  For this example, we’re varying number of hidden layers, number of nodes per hidden layer, and learning rate in the HP search. There are many other hyperparameters that you might also want to vary in your search.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="n">hp</span><span class="p">):</span>
+  <span class="n">inputs</span><span class="p">,</span> <span class="n">sparse</span><span class="p">,</span> <span class="n">real</span> <span class="o">=</span> <span class="n">bwmodel</span><span class="o">.</span><span class="n">get_layers</span><span class="p">()</span>
+  <span class="o">...</span>
+  <span class="n">model</span> <span class="o">=</span> <span class="n">bwmodel</span><span class="o">.</span><span class="n">wide_and_deep_classifier</span><span class="p">(</span>
+      <span class="n">inputs</span><span class="p">,</span>
+      <span class="n">linear_feature_columns</span><span class="o">=</span><span class="n">sparse</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+      <span class="n">dnn_feature_columns</span><span class="o">=</span><span class="n">real</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+      <span class="n">num_hidden_layers</span><span class="o">=</span><span class="n">hp</span><span class="o">.</span><span class="n">Int</span><span class="p">(</span><span class="s">'num_hidden_layers'</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+      <span class="n">dnn_hidden_units1</span><span class="o">=</span><span class="n">hp</span><span class="o">.</span><span class="n">Int</span><span class="p">(</span><span class="s">'hidden_size'</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">32</span><span class="p">),</span>
+      <span class="n">learning_rate</span><span class="o">=</span><span class="n">hp</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="s">'learning_rate'</span><span class="p">,</span>
+                    <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="mf">1e-1</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">])</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>Then, call <code class="highlighter-rouge">tuner.search(...)</code>.  See the Keras Tuner docs for more.</p>
+
+<p>The <a href="https://keras-team.github.io/keras-tuner/">Keras Tuner</a> supports running this search in <a href="https://keras-team.github.io/keras-tuner/tutorials/distributed-tuning/"><strong>distributed mode</strong></a>.
 <a href="https://cloud.google.com/kubernetes-engine">Google Kubernetes Engine (GKE)</a> makes it straightforward to configure and run a distributed HP tuning search.  GKE is  a good fit not only because it lets you easily distribute the HP tuning workload, but because you can leverage autoscaling to boost node pools for a large job, then scale down when the resources are no longer needed.  It’s also easy to deploy trained models for serving onto the same GKE cluster, using <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>.  In addition, the Keras Tuner works well with <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/preemptible-vms"><strong>preemptible VMs</strong></a>, making it even cheaper to run your workloads.</p>
 
 <p>With the Keras Tuner’s distributed config, you specify one node as the ‘chief’, which coordinates the search, and ‘tuner’ nodes that do the actual work of running model training jobs using a given param set (the <em>trials</em>).  When you set up an HP search, you indicate the max number of trials to run, and how many <em>executions</em> to run per trial. The Kubeflow Pipeline allows dynamic specification of the number of tuners to use for a given HP search— this determines how many trials you can run concurrently— as well as the max number of trials and number of executions.</p>
@@ -208,29 +242,33 @@ The example uses GCS for the tuners’ shared file system.</p>
 
 <p>The pipeline then runs full training jobs, concurrently, for each of the <code class="highlighter-rouge">N</code> best parameter sets.  It does this via the KFP <a href="https://github.com/kubeflow/pipelines/tree/master/samples/core/loop_parameter">loop</a> construct, allowing the pipeline to support dynamic specification of <code class="highlighter-rouge">N</code>.  The training jobs can be monitored and compared using TensorBoard, both while they’re running and after they’ve completed.</p>
 
-<p>Then, the trained models are deployed for serving for serving on the GKE cluster, using <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>.  Each deployed model has its own cluster service endpoint.<br>
+<p>Then, the trained models are deployed for serving for serving on the GKE cluster, using <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>.  Each deployed model has its own cluster service endpoint.
 (While not included in this example, one could insert a step for model evaluation before making the decision about whether to deploy to TF-serving.)</p>
 
 <p>For example, here is the <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a> for a pipeline execution that did training and then deployed prediction services for the two best parameter configurations.</p>
 
 <figure>
-<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/pl_dag.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/pl_dag.png" width="60%"></a>
+<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/pl_dag.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/pl_dag.png" width="80%"></a>
 <figcaption><br><i>The DAG for keras tuner pipeline execution.  Here the two best parameter configurations were used for full training.</i></figcaption>
 </figure>
 
-<h2 id="running-the-example-pipeline">
-<a class="anchor" href="#running-the-example-pipeline" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the example pipeline</h2>
+<h3 id="running-the-example-pipeline">
+<a class="anchor" href="#running-the-example-pipeline" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the example pipeline</h3>
 
 <blockquote>
   <p><strong>Note</strong>: this example may take a long time to run, and <strong>incur significant charges</strong> in its use of GPUs, depending upon how its parameters are configured.</p>
 </blockquote>
 
-<p>To run the example, and for more detail on the KFP pipeline’s components, see the example’s <a href="https://github.com/amygdala/code-snippets/blob/keras_tuner2/ml/kubeflow-pipelines/keras_tuner/README.md"><code class="highlighter-rouge">README</code></a>.</p>
+<p>To run the example yourself, and for more detail on the KFP pipeline’s components, see the example’s <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md"><code class="highlighter-rouge">README</code></a>.</p>
 
 <h2 id="whats-next">
-<a class="anchor" href="#whats-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>What’s next?…</h2>
+<a class="anchor" href="#whats-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>What’s next?</h2>
 
-<p>One obvious next step in pipeline development would be to add components that evaluate each full model after training, before determining whether to deploy it, e.g. using <a href="https://www.tensorflow.org/tfx/model_analysis/get_started">TensorFlow Model Analysis</a>  (TFMA).  Stay tuned for a follow-up blog post that explores how to do that.</p>
+<p>One obvious next step in development of the workflow would be to add components that evaluate each full model after training, before determining whether to deploy it, e.g. using <a href="https://www.tensorflow.org/tfx/model_analysis/get_started">TensorFlow Model Analysis</a>  (TFMA).  Stay tuned for a follow-up blog post that explores how to do that using KFP.</p>
+
+<p>While not covered in this example, it would alternatively have been straightforward to deploy and serve the trained model(s) using <a href="https://cloud.google.com/ai-platform/prediction/docs">AI Platform Prediction</a>.</p>
+
+<p>Another alternative would be to use <a href="https://cloud.google.com/ai-platform/optimizer/docs/overview">AI Platform Vizier</a> for hyperparameter tuning search instead of the Keras Tuner libraries. Stay tuned for a post on that as well.</p>
 
 
   </div><a class="u-url" href="/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html" hidden></a>
