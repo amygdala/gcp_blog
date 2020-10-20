@@ -112,7 +112,8 @@ To run the example yourself, and for more detail on the KFP pipeline’s compone
 
 ## What’s next?
 
-One obvious next step in development of the workflow would be to add components that evaluate each full model after training, before determining whether to deploy it, e.g. using [TensorFlow Model Analysis][34]  (TFMA).  Stay tuned for a follow-up blog post that explores how to do that using KFP.
+One obvious next step in development of the workflow would be to add components that evaluate each full model after training, before determining whether to deploy it. One approach could be to use
+[TensorFlow Model Analysis][34]  (TFMA).  Stay tuned for some follow-on posts that explore how to do that using KFP.
 
 While not covered in this example, it would alternatively have been straightforward to deploy and serve the trained model(s) using [AI Platform Prediction](https://cloud.google.com/ai-platform/prediction/docs).
 
