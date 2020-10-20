@@ -9,13 +9,13 @@
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner" />
 <meta property="og:description" content="How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner" />
-<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html" />
-<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html" />
 <meta property="og:site_name" content="Amy on GCP" />
 <meta property="og:type" content="article" />
-<meta property="article:published_time" content="2020-10-01T00:00:00-05:00" />
+<meta property="article:published_time" content="2020-10-19T00:00:00-05:00" />
 <script type="application/ld+json">
-{"description":"How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner","@type":"BlogPosting","headline":"Running a distributed Keras HP Tuning search using Kubeflow Pipelines","dateModified":"2020-10-01T00:00:00-05:00","datePublished":"2020-10-01T00:00:00-05:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html"},"@context":"https://schema.org"}</script>
+{"description":"How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner","@type":"BlogPosting","headline":"Running a distributed Keras HP Tuning search using Kubeflow Pipelines","dateModified":"2020-10-19T00:00:00-05:00","datePublished":"2020-10-19T00:00:00-05:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html"},"@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
 
@@ -30,13 +30,13 @@
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner" />
 <meta property="og:description" content="How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner" />
-<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html" />
-<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html" />
 <meta property="og:site_name" content="Amy on GCP" />
 <meta property="og:type" content="article" />
-<meta property="article:published_time" content="2020-10-01T00:00:00-05:00" />
+<meta property="article:published_time" content="2020-10-19T00:00:00-05:00" />
 <script type="application/ld+json">
-{"description":"How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner","@type":"BlogPosting","headline":"Running a distributed Keras HP Tuning search using Kubeflow Pipelines","dateModified":"2020-10-01T00:00:00-05:00","datePublished":"2020-10-01T00:00:00-05:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html"},"@context":"https://schema.org"}</script>
+{"description":"How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner","@type":"BlogPosting","headline":"Running a distributed Keras HP Tuning search using Kubeflow Pipelines","dateModified":"2020-10-19T00:00:00-05:00","datePublished":"2020-10-19T00:00:00-05:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html"},"@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
 <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
@@ -97,8 +97,8 @@ window.onload = wrap_img;
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Running a distributed Keras HP Tuning search using Kubeflow Pipelines</h1><p class="page-description">How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-10-01T00:00:00-05:00" itemprop="datePublished">
-        Oct 1, 2020
+    <h1 class="post-title p-name" itemprop="name headline">Running a distributed Keras HP Tuning search using Kubeflow Pipelines</h1><p class="page-description">How to use Kubeflow Pipelines to support HP Tuning using the Keras Tuner</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-10-19T00:00:00-05:00" itemprop="datePublished">
+        Oct 19, 2020
       </time>
        • <span class="read-time" title="Estimated read time">
     
@@ -264,14 +264,15 @@ The example uses GCS for the tuners’ shared file system.</p>
 <h2 id="whats-next">
 <a class="anchor" href="#whats-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>What’s next?</h2>
 
-<p>One obvious next step in development of the workflow would be to add components that evaluate each full model after training, before determining whether to deploy it, e.g. using <a href="https://www.tensorflow.org/tfx/model_analysis/get_started">TensorFlow Model Analysis</a>  (TFMA).  Stay tuned for a follow-up blog post that explores how to do that using KFP.</p>
+<p>One obvious next step in development of the workflow would be to add components that evaluate each full model after training, before determining whether to deploy it. One approach could be to use
+<a href="https://www.tensorflow.org/tfx/model_analysis/get_started">TensorFlow Model Analysis</a>  (TFMA).  Stay tuned for some follow-on posts that explore how to do that using KFP.</p>
 
 <p>While not covered in this example, it would alternatively have been straightforward to deploy and serve the trained model(s) using <a href="https://cloud.google.com/ai-platform/prediction/docs">AI Platform Prediction</a>.</p>
 
 <p>Another alternative would be to use <a href="https://cloud.google.com/ai-platform/optimizer/docs/overview">AI Platform Vizier</a> for hyperparameter tuning search instead of the Keras Tuner libraries. Stay tuned for a post on that as well.</p>
 
 
-  </div><a class="u-url" href="/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/01/keras_tuner.html" hidden></a>
+  </div><a class="u-url" href="/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html" hidden></a>
 </article>
       </div>
     </main><footer class="site-footer h-card">
