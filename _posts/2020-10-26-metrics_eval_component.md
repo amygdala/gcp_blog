@@ -6,6 +6,7 @@ categories: [ml, kfp, mlops, keras, hp_tuning]
 title: Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation
 ---
 
+## Introduction
 
 This [blog post](https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html) and accompanying [tutorial](https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md) walked through how to build a [Kubeflow Pipelines](https://www.kubeflow.org/docs/pipelines/) (KFP) pipeline that uses the [Keras Tuner](https://blog.tensorflow.org/2020/01/hyperparameter-tuning-with-keras-tuner.html) to build a hyperparameter-tuning workflow that uses distributed HP search.
 

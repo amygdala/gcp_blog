@@ -114,6 +114,7 @@ To run the example yourself, and for more detail on the KFP pipeline’s compone
 
 One obvious next step in development of the workflow would be to add components that evaluate each full model after training, before determining whether to deploy it. One approach could be to use
 [TensorFlow Model Analysis][34]  (TFMA).  Stay tuned for some follow-on posts that explore how to do that using KFP.
+(Update: one such post is [here](https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html)).
 
 While not covered in this example, it would alternatively have been straightforward to deploy and serve the trained model(s) using [AI Platform Prediction](https://cloud.google.com/ai-platform/prediction/docs).
 
