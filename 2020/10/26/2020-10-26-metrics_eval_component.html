@@ -1,0 +1,297 @@
+<p>This <a href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html">blog post</a> and accompanying <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">tutorial</a> walked through how to build a <a href="https://www.kubeflow.org/docs/pipelines/">Kubeflow Pipelines</a> (KFP) pipeline that uses the <a href="https://blog.tensorflow.org/2020/01/hyperparameter-tuning-with-keras-tuner.html">Keras Tuner</a> to build a hyperparameter-tuning workflow that uses distributed HP search.</p>
+
+<p>That pipeline does HP tuning, then runs full training on the N best parameter sets identified from the HP search, then deploys the full models to <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>.<br />
+One thing that was missing from that pipeline was any check on the quality of the trained models prior to deployment to TF-Serving.</p>
+
+<p>This post is based on an <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/notebooks/metrics_eval_component.ipynb">example notebook</a>, and is a follow-on to that tutorial.  You can follow along in the notebook instead if you like (see below).</p>
+
+<p>Here, we’ll show how you can create a KFP “lightweight component”, built from a python function, to do a simple threshold check on some of the model metrics in order to decide whether to deploy the model. (This is a pretty simple approach, that we’re using for illustrative purposes; for production models you’d probably want to do more sophisticated analyses. The <a href="https://www.tensorflow.org/tfx/model_analysis/get_started">TFMA library</a> might be of interest).
+We’ll also show how to use the KFP SDK to define and run pipelines from a notebook.</p>
+
+<h2 id="setup">Setup</h2>
+
+<p>This example assumes that you’ve <strong>done the setup indicated in the <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a></strong>, and have an AI Platform Pipelines (Hosted KFP) installation, with GPU node pools added to the cluster.</p>
+
+<h3 id="create-an-ai-platform-notebooks-instance">Create an AI Platform Notebooks instance</h3>
+
+<p>In addition, create an AI Platform Notebooks instance on which to run <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/notebooks/metrics_eval_component.ipynb">the example notebook</a> on which this post is based. See setup instructions <a href="https://cloud.google.com/ai-platform/notebooks/docs">here</a>. (You can run this notebook in other environments, including, locally, but that requires additional auth setup that we won’t go into here).</p>
+
+<p><strong>Once your notebook instance is set up, you should be able to use <a href="https://console.cloud.google.com/ai-platform/notebooks/deploy-notebook?name=Create%20a%20new%20KFP%20component%20from%20a%20notebook&amp;download_url=https%3A%2F%2Fraw.githubusercontent.com%2Famygdala%2Fcode-snippets%2Fmaster%2Fml%2Fkubeflow-pipelines%2Fkeras_tuner%2Fnotebooks%2Fmetrics_eval_component.ipynb&amp;url=https%3A%2F%2Fgithub.com%2Famygdala%2Fcode-snippets%2Fblob%2Fmaster%2Fml%2Fkubeflow-pipelines%2Fkeras_tuner%2Fnotebooks%2Fmetrics_eval_component.ipynb">this link</a> to upload and run the notebook.</strong></p>
+
+<h3 id="install-the-kfp-sdk">Install the KFP SDK</h3>
+
+<p>Next, we’ll install the KFP SDK.  In a notebook, you may need to restart the kernel so it’s available for import.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="o">-</span><span class="n">U</span> <span class="n">kfp</span> <span class="n">kfp</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="n">api</span>
+</code></pre></div></div>
+
+<p>Next, we’ll do some imports:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">kfp</span>  <span class="c1"># the Pipelines SDK. 
+</span><span class="kn">from</span> <span class="nn">kfp</span> <span class="kn">import</span> <span class="n">compiler</span>
+<span class="kn">import</span> <span class="nn">kfp.dsl</span> <span class="k">as</span> <span class="n">dsl</span>
+<span class="kn">import</span> <span class="nn">kfp.gcp</span> <span class="k">as</span> <span class="n">gcp</span>
+<span class="kn">import</span> <span class="nn">kfp.components</span> <span class="k">as</span> <span class="n">comp</span>
+</code></pre></div></div>
+
+<h2 id="defining-a-new-lightweight-component-based-on-a-python-function">Defining a new ‘lightweight component’ based on a python function</h2>
+
+<p>‘Lightweight’ KFP python components allow you to create a component from a python function definition, and do not require you to build a new container image for every code change. They’re helpful for fast iteration in a notebook environment. You can read more <a href="https://github.com/kubeflow/pipelines/blob/master/samples/core/lightweight_component/lightweight_component.ipynb">here</a>.</p>
+
+<p>In this section, we’ll create a lightweight component that uses training metrics info to decide whether to deploy a model.
+We’ll pass a “threshold” dict as a component arg, and compare those thresholds to the metrics values, and use that info to decide whether or not to deploy.  Then we’ll output a string indicating the decision.</p>
+
+<p>(As mentioned above, for production models you’d probably want to do a more substantial analysis. The <a href="https://www.tensorflow.org/tfx/model_analysis/get_started">TFMA library</a> might be of interest. Stay tuned for a follow-on post that uses TFMA).</p>
+
+<p>Then we’ll define a pipeline that uses the new component. In the pipeline spec, we’ll make the ‘serve’ step conditional on the “metrics” op output.</p>
+
+<p>First, we’ll define the component function, <code class="highlighter-rouge">eval_metrics</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
+
+<span class="k">def</span> <span class="nf">eval_metrics</span><span class="p">(</span>
+  <span class="n">metrics</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+  <span class="n">thresholds</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NamedTuple</span><span class="p">(</span><span class="s">'Outputs'</span><span class="p">,</span> <span class="p">[(</span><span class="s">'deploy'</span><span class="p">,</span> <span class="nb">str</span><span class="p">)]):</span>
+
+  <span class="kn">import</span> <span class="nn">json</span>
+  <span class="kn">import</span> <span class="nn">logging</span>
+
+  <span class="k">def</span> <span class="nf">regression_threshold_check</span><span class="p">(</span><span class="n">metrics_info</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">thresholds_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'k {}, v {}'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+      <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s">'root_mean_squared_error'</span><span class="p">,</span> <span class="s">'mae'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">metrics_info</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">v</span><span class="p">:</span>
+          <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'{} &gt; {}; returning False'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">metrics_info</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">v</span><span class="p">))</span>
+          <span class="k">return</span> <span class="p">(</span><span class="s">'False'</span><span class="p">,</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="s">'deploy'</span><span class="p">,</span> <span class="p">)</span>
+
+  <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+  <span class="n">thresholds_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">thresholds</span><span class="p">)</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'thresholds dict: {}'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">thresholds_dict</span><span class="p">))</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'metrics: </span><span class="si">%</span><span class="s">s'</span><span class="p">,</span> <span class="n">metrics</span><span class="p">)</span>
+  <span class="n">metrics_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">"got metrics info: </span><span class="si">%</span><span class="s">s"</span><span class="p">,</span> <span class="n">metrics_dict</span><span class="p">)</span>
+  <span class="n">res</span> <span class="o">=</span> <span class="n">regression_threshold_check</span><span class="p">(</span><span class="n">metrics_dict</span><span class="p">)</span>
+  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'deploy decision: </span><span class="si">%</span><span class="s">s'</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">res</span>
+
+</code></pre></div></div>
+
+<p>To keep things simple, we’re comparing only RMSE and MAE with given threshold values.  (This function is tailored for our Keras regression model). Lower is better, so if a threshold value is higher than the associated model metric, we won’t deploy.</p>
+
+<p>Next, we’ll create a ‘container op’ from the <code class="highlighter-rouge">eval_metrics</code> function definition, via the <code class="highlighter-rouge">funct_to_container_op</code> method. As one of the method args, we specify the base container image that will run the function. 
+Here, we’re using one of the <a href="https://cloud.google.com/ai-platform/deep-learning-containers/docs/">Deep Learning Container images</a>.  (This container image installs more than is necessary for this simple function, but these DL images can be useful for many ML-related components).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">eval_metrics_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">func_to_container_op</span><span class="p">(</span><span class="n">eval_metrics</span><span class="p">,</span> <span class="n">base_image</span><span class="o">=</span><span class="s">'gcr.io/deeplearning-platform-release/tf2-cpu.2-3:latest'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="define-a-pipeline-that-uses-the-new-metrics-op">Define a pipeline that uses the new “metrics” op</h2>
+
+<p>Now, we can define a new pipeline that uses the new op and makes the model serving conditional on the results.</p>
+
+<p>The new <code class="highlighter-rouge">eval_metrics_op</code> takes as an input one of the <code class="highlighter-rouge">train_op</code> outputs, which outputs a final metrics dict. (We “cheated” a bit, as the training component was already designed to output this info; in other cases you might end up defining a new version of such an op that outputs the new info you need).</p>
+
+<p>Then, we’ll wrap the serving op in a <em>conditional</em>; we won’t set up a TF-serving service unless the <code class="highlighter-rouge">eval_metrics</code> op has certified that it is okay.</p>
+
+<p>Note that this new version of the pipeline also has a new input parameter— the <code class="highlighter-rouge">thresholds</code> dict.</p>
+
+<p>To keep things simple, we’ll first define a pipeline that skips the HP tuning part of the pipeline used <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">here</a>.  This will make it easier to test your new op with a pipeline that takes a shorter time to run.</p>
+
+<p>Then in a following section we’ll show how to augment the full HP tuning pipeline to include the new op.</p>
+
+<p>We’ll first instantiate the other pipeline ops from their <a href="https://www.kubeflow.org/docs/pipelines/sdk/component-development/">reusable components</a> definitions.  (And we’ve defined the <code class="highlighter-rouge">eval_metrics_op</code> above).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="n">train_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_url</span><span class="p">(</span>
+  <span class="s">'https://raw.githubusercontent.com/amygdala/code-snippets/master/ml/kubeflow-pipelines/keras_tuner/components/train_component.yaml'</span>
+  <span class="p">)</span>
+<span class="n">serve_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_url</span><span class="p">(</span>
+  <span class="s">'https://raw.githubusercontent.com/amygdala/code-snippets/master/ml/kubeflow-pipelines/keras_tuner/components/serve_component.yaml'</span>
+  <span class="p">)</span>
+
+<span class="n">tb_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">load_component_from_url</span><span class="p">(</span>
+  <span class="s">'https://raw.githubusercontent.com/kubeflow/pipelines/master/components/tensorflow/tensorboard/prepare_tensorboard/component.yaml'</span> 
+  <span class="p">)</span>
+</code></pre></div></div>
+
+<p>Next, we’ll define the pipeline itself.  You might notice that this pipeline has a new parameter, <code class="highlighter-rouge">thresholds</code>.</p>
+
+<p>This pipeline first sets up a TensorBoard visualization for monitoring the training run. Then it starts the training. Once training is finished, the new op checks whether the trained model’s final metrics are above the given threshold(s). 
+If so (using the KFP <code class="highlighter-rouge">dsl.Condition</code> construct), TF-serving is used to set up a prediction service on the Pipelines GKE cluster.</p>
+
+<p>You can see that data is being passed between the pipeline ops. <a href="https://gist.github.com/amygdala/bfa0f599a4814b3261367f558a852bfe">Here’s a tutorial</a> that goes into how that works in more detail.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">dsl</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
+  <span class="n">name</span><span class="o">=</span><span class="s">'bikes_weather_metrics'</span><span class="p">,</span>
+  <span class="n">description</span><span class="o">=</span><span class="s">'Model bike rental duration given weather'</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">bikes_weather_metrics</span><span class="p">(</span> 
+  <span class="n">train_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="n">working_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://YOUR/GCS/PATH'</span><span class="p">,</span>  <span class="c1"># for the full training jobs
+</span>  <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://aju-dev-demos-codelabs/bikes_weather/'</span><span class="p">,</span>
+  <span class="n">steps_per_epoch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="p">,</span>  <span class="c1"># if -1, don't override normal calcs based on dataset size
+</span>  <span class="n">hptune_params</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'[{"num_hidden_layers": </span><span class="si">%</span><span class="s">s, "learning_rate": </span><span class="si">%</span><span class="s">s, "hidden_size": </span><span class="si">%</span><span class="s">s}]'</span> <span class="o">%</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>
+  <span class="n">thresholds</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'{"root_mean_squared_error": 2000}'</span>
+  <span class="p">):</span>
+
+  <span class="c1"># create TensorBoard viz for the parent directory of all training runs, so that we can
+</span>  <span class="c1"># compare them.
+</span>  <span class="n">tb_viz</span> <span class="o">=</span> <span class="n">tb_op</span><span class="p">(</span>
+    <span class="n">log_dir_uri</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/</span><span class="si">%</span><span class="s">s'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="n">dsl</span><span class="o">.</span><span class="n">RUN_ID_PLACEHOLDER</span><span class="p">)</span>
+  <span class="p">)</span>
+
+  <span class="n">train</span> <span class="o">=</span> <span class="n">train_op</span><span class="p">(</span>
+    <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
+    <span class="n">workdir</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/</span><span class="si">%</span><span class="s">s'</span> <span class="o">%</span> <span class="p">(</span><span class="n">tb_viz</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'log_dir_uri'</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">tb_dir</span><span class="o">=</span><span class="n">tb_viz</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'log_dir_uri'</span><span class="p">],</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="n">train_epochs</span><span class="p">,</span> <span class="n">steps_per_epoch</span><span class="o">=</span><span class="n">steps_per_epoch</span><span class="p">,</span>
+    <span class="n">hp_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+    <span class="n">hptune_results</span><span class="o">=</span><span class="n">hptune_params</span>
+    <span class="p">)</span>
+
+  <span class="n">eval_metrics</span> <span class="o">=</span> <span class="n">eval_metrics_op</span><span class="p">(</span>
+    <span class="n">thresholds</span><span class="o">=</span><span class="n">thresholds</span><span class="p">,</span>
+    <span class="n">metrics</span><span class="o">=</span><span class="n">train</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'metrics_output_path'</span><span class="p">],</span>
+    <span class="p">)</span>
+
+  <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span><span class="n">eval_metrics</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'deploy'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'deploy'</span><span class="p">):</span>  <span class="c1"># conditional serving
+</span>    <span class="n">serve</span> <span class="o">=</span> <span class="n">serve_op</span><span class="p">(</span>
+      <span class="n">model_path</span><span class="o">=</span><span class="n">train</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'train_output_path'</span><span class="p">],</span>
+      <span class="n">model_name</span><span class="o">=</span><span class="s">'bikesw'</span><span class="p">,</span>
+      <span class="n">namespace</span><span class="o">=</span><span class="s">'default'</span>
+      <span class="p">)</span>
+  <span class="n">train</span><span class="o">.</span><span class="n">set_gpu_limit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Now we can run the pipeline from the notebook.  First create a client object to talk to your KFP installation. Using that client, create (or get) an <em>Experiment</em> (which lets you create semantic groupings of pipeline runs).</p>
+
+<p>You’ll need to set the correct host endpoint for your pipelines installation when you create the client.  Visit the <a href="https://console.cloud.google.com/ai-platform/pipelines/clusters">Pipelines panel in the Cloud Console</a> and click on the <strong>SETTINGS</strong> gear for the desired installation to get its endpoint.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># CHANGE THIS with the info for your KFP cluster installation
+</span><span class="n">client</span> <span class="o">=</span> <span class="n">kfp</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">'xxxxxxxx-dot-us-centralx.pipelines.googleusercontent.com'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">exp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_experiment</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'bw_expers'</span><span class="p">)</span>  <span class="c1"># this is a 'get or create' call
+</span></code></pre></div></div>
+
+<p>(If the <code class="highlighter-rouge">create_experiment</code> call failed, double check your host endpoint value).</p>
+
+<p>Now, we can compile and then run the pipeline.  We’ll set some vars with pipeline params:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">WORKING_DIR</span> <span class="o">=</span> <span class="s">'gs://YOUR_GCS/PATH'</span>
+<span class="n">TRAIN_EPOCHS</span> <span class="o">=</span> <span class="mi">2</span>
+</code></pre></div></div>
+
+<p>Now we’ll compile and run the pipeline.</p>
+
+<p>Note that this pipeline is configured to use a GPU node for the training step, so make sure that you have set up a GPU node pool for the cluster that your KFP installation is running on, as described in this <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a>. Note also that GPU nodes are more expensive.<br />
+If you want, you can comment out the <code class="highlighter-rouge">train.set_gpu_limit(2)</code> line in the pipeline definition above to run training on a CPU node.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">compiler</span><span class="o">.</span><span class="n">Compiler</span><span class="p">()</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="n">bikes_weather_metrics</span><span class="p">,</span> <span class="s">'bikes_weather_metrics.tar.gz'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">run</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">run_pipeline</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="nb">id</span><span class="p">,</span> <span class="s">'bw_metrics_test'</span><span class="p">,</span> <span class="s">'bikes_weather_metrics.tar.gz'</span><span class="p">,</span>
+                          <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s">'working_dir'</span><span class="p">:</span> <span class="n">WORKING_DIR</span><span class="p">,</span> <span class="s">'train_epochs'</span><span class="p">:</span> <span class="n">TRAIN_EPOCHS</span>
+                                 <span class="c1"># 'thresholds': THRESHOLDS
+</span>                                 <span class="p">})</span>
+</code></pre></div></div>
+
+<p>Once you’ve kicked off the run, click the generated link to see the pipeline run in the Kubeflow Pipelines dashboard of your pipelines installation. (See the last section for more info on how to use your trained and deployed model for prediction).</p>
+
+<p><strong>Note</strong>: It’s also possible to start a pipeline run directly from the pipeline function definition, skipping the local compilation, like this:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">kfp</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">kfp_endpoint</span><span class="p">)</span><span class="o">.</span><span class="n">create_run_from_pipeline_func</span><span class="p">(</span><span class="o">&lt;</span><span class="n">pipeline_function_name</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">arguments</span><span class="o">=</span><span class="p">{})</span>
+</code></pre></div></div>
+
+<h2 id="use-the-new-metrics-op-with-the-full-keras-tuner-pipeline">Use the new “metrics” op with the full Keras Tuner pipeline</h2>
+
+<p>To keep things simple, the pipeline above didn’t do an HP tuning search.
+Below is how the full pipeline from <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">this tutorial</a> would be redefined to use this new op.</p>
+
+<p>This definition assumes that you’ve run the cells above that instantiated the ops from their component specs. This new definition includes an additional <code class="highlighter-rouge">hptune</code> op (defined “inline” using <code class="highlighter-rouge">dsl.ContainerOp()</code>) that deploys the distributed HP tuning job and then waits for the results.</p>
+
+<blockquote>
+  <p><strong>Important note</strong>: this example may take a long time to run, and <strong>incur significant charges</strong> in its use of GPUs, depending upon how its parameters are configured.</p>
+</blockquote>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">dsl</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
+  <span class="n">name</span><span class="o">=</span><span class="s">'bikes_weather_keras_tuner'</span><span class="p">,</span>
+  <span class="n">description</span><span class="o">=</span><span class="s">'Model bike rental duration given weather, use Keras Tuner'</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">bikes_weather_hptune</span><span class="p">(</span>
+  <span class="n">tune_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="n">train_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="n">num_tuners</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+  <span class="n">bucket_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'YOUR_BUCKET_NAME'</span><span class="p">,</span>  <span class="c1"># used for the HP dirs; don't include the 'gs://'
+</span>  <span class="n">tuner_dir_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'hptest'</span><span class="p">,</span>
+  <span class="n">tuner_proj</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'p1'</span><span class="p">,</span>
+  <span class="n">max_trials</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+  <span class="n">working_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://YOUR/GCS/PATH'</span><span class="p">,</span>  <span class="c1"># for the full training jobs
+</span>  <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://aju-dev-demos-codelabs/bikes_weather/'</span><span class="p">,</span>
+  <span class="n">steps_per_epoch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="p">,</span>  <span class="c1"># if -1, don't override normal calcs based on dataset size
+</span>  <span class="n">num_best_hps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>  <span class="c1"># the N best parameter sets for full training
+</span>  <span class="c1"># the indices to the best param sets; necessary in addition to the above param because of
+</span>  <span class="c1"># how KFP loops work currently.  Must be consistent with the above param.
+</span>  <span class="n">num_best_hps_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+  <span class="n">thresholds</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'{"root_mean_squared_error": 2000}'</span>
+  <span class="p">):</span>
+
+  <span class="n">hptune</span> <span class="o">=</span> <span class="n">dsl</span><span class="o">.</span><span class="n">ContainerOp</span><span class="p">(</span>
+      <span class="n">name</span><span class="o">=</span><span class="s">'ktune'</span><span class="p">,</span>
+      <span class="n">image</span><span class="o">=</span><span class="s">'gcr.io/google-samples/ml-pipeline-bikes-dep:b97ee76'</span><span class="p">,</span>
+      <span class="n">arguments</span><span class="o">=</span><span class="p">[</span><span class="s">'--epochs'</span><span class="p">,</span> <span class="n">tune_epochs</span><span class="p">,</span> <span class="s">'--num-tuners'</span><span class="p">,</span> <span class="n">num_tuners</span><span class="p">,</span>
+          <span class="s">'--tuner-dir'</span><span class="p">,</span> <span class="s">'</span><span class="si">%</span><span class="s">s/</span><span class="si">%</span><span class="s">s'</span> <span class="o">%</span> <span class="p">(</span><span class="n">tuner_dir_prefix</span><span class="p">,</span> <span class="n">dsl</span><span class="o">.</span><span class="n">RUN_ID_PLACEHOLDER</span><span class="p">),</span>
+          <span class="s">'--tuner-proj'</span><span class="p">,</span> <span class="n">tuner_proj</span><span class="p">,</span> <span class="s">'--bucket-name'</span><span class="p">,</span> <span class="n">bucket_name</span><span class="p">,</span> <span class="s">'--max-trials'</span><span class="p">,</span> <span class="n">max_trials</span><span class="p">,</span>
+          <span class="s">'--namespace'</span><span class="p">,</span> <span class="s">'default'</span><span class="p">,</span> <span class="s">'--num-best-hps'</span><span class="p">,</span> <span class="n">num_best_hps</span><span class="p">,</span> <span class="s">'--executions-per-trial'</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>
+          <span class="s">'--deploy'</span>
+          <span class="p">],</span>
+      <span class="n">file_outputs</span><span class="o">=</span><span class="p">{</span><span class="s">'hps'</span><span class="p">:</span> <span class="s">'/tmp/hps.json'</span><span class="p">},</span>
+      <span class="p">)</span>
+
+  <span class="c1"># create TensorBoard viz for the parent directory of all training runs, so that we can
+</span>  <span class="c1"># compare them.
+</span>  <span class="n">tb_viz</span> <span class="o">=</span> <span class="n">tb_op</span><span class="p">(</span>
+    <span class="n">log_dir_uri</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/</span><span class="si">%</span><span class="s">s'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="n">dsl</span><span class="o">.</span><span class="n">RUN_ID_PLACEHOLDER</span><span class="p">)</span>
+  <span class="p">)</span>
+
+  <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">ParallelFor</span><span class="p">(</span><span class="n">num_best_hps_list</span><span class="p">)</span> <span class="k">as</span> <span class="n">idx</span><span class="p">:</span>  <span class="c1"># start the full training runs in parallel
+</span>
+    <span class="n">train</span> <span class="o">=</span> <span class="n">train_op</span><span class="p">(</span>
+      <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
+      <span class="n">workdir</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/</span><span class="si">%</span><span class="s">s'</span> <span class="o">%</span> <span class="p">(</span><span class="n">tb_viz</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'log_dir_uri'</span><span class="p">],</span> <span class="n">idx</span><span class="p">),</span>
+      <span class="n">tb_dir</span><span class="o">=</span><span class="n">tb_viz</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'log_dir_uri'</span><span class="p">],</span>
+      <span class="n">epochs</span><span class="o">=</span><span class="n">train_epochs</span><span class="p">,</span> <span class="n">steps_per_epoch</span><span class="o">=</span><span class="n">steps_per_epoch</span><span class="p">,</span>
+      <span class="n">hp_idx</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">hptune_results</span><span class="o">=</span><span class="n">hptune</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'hps'</span><span class="p">]</span>
+      <span class="p">)</span>
+
+    <span class="n">eval_metrics</span> <span class="o">=</span> <span class="n">eval_metrics_op</span><span class="p">(</span>
+      <span class="n">thresholds</span><span class="o">=</span><span class="n">thresholds</span><span class="p">,</span>
+      <span class="n">metrics</span><span class="o">=</span><span class="n">train</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'metrics_output_path'</span><span class="p">],</span>
+      <span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span><span class="n">eval_metrics</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'deploy'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'deploy'</span><span class="p">):</span>  <span class="c1"># conditional serving
+</span>      <span class="n">serve</span> <span class="o">=</span> <span class="n">serve_op</span><span class="p">(</span>
+        <span class="n">model_path</span><span class="o">=</span><span class="n">train</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'train_output_path'</span><span class="p">],</span>
+        <span class="n">model_name</span><span class="o">=</span><span class="s">'bikesw'</span><span class="p">,</span>
+        <span class="n">namespace</span><span class="o">=</span><span class="s">'default'</span>
+        <span class="p">)</span>
+
+    <span class="n">train</span><span class="o">.</span><span class="n">set_gpu_limit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>If you want, you can compile and run this pipeline the same way as was done in the previous section. You can also find this pipeline in the example repo <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/example_pipelines/bw_ktune_metrics.py">here</a>.</p>
+
+<h2 id="more-detail-on-the-code-and-requesting-predictions-from-your-model">More detail on the code, and requesting predictions from your model</h2>
+
+<p>This example didn’t focus on the details of the pipeline component (step) implementations.  The training component uses a Keras model (TF 2.3). The serving component uses <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>: once the serving service is up and running, you can send prediction requests to your trained model.</p>
+
+<p>You can find more detail on these components, and an example of sending a prediction request, <a href="https://github.com/amygdala/code-snippets/tree/master/ml/kubeflow-pipelines/keras_tuner">here</a>.</p>
+
+<hr />
+<p>Copyright 2020, Google, LLC. Licensed under the Apache License, Version 2.0 (the “License”); you may not use this file except in compliance with the License. You may obtain a copy of the License at</p>
+
+<p>http://www.apache.org/licenses/LICENSE-2.0</p>
+
+<p>Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</p>
