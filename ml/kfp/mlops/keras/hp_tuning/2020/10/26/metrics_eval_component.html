@@ -1,6 +1,150 @@
-<p>This <a href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html">blog post</a> and accompanying <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">tutorial</a> walked through how to build a <a href="https://www.kubeflow.org/docs/pipelines/">Kubeflow Pipelines</a> (KFP) pipeline that uses the <a href="https://blog.tensorflow.org/2020/01/hyperparameter-tuning-with-keras-tuner.html">Keras Tuner</a> to build a hyperparameter-tuning workflow that uses distributed HP search.</p>
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="how to create a Kubeflow Pipelines component from a python function, and define and deploy pipelines from a notebook" />
+<meta property="og:description" content="how to create a Kubeflow Pipelines component from a python function, and define and deploy pipelines from a notebook" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-10-26T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"how to create a Kubeflow Pipelines component from a python function, and define and deploy pipelines from a notebook","@type":"BlogPosting","headline":"Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation","dateModified":"2020-10-26T00:00:00-05:00","datePublished":"2020-10-26T00:00:00-05:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
 
-<p>That pipeline does HP tuning, then runs full training on the N best parameter sets identified from the HP search, then deploys the full models to <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>.<br />
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+<link rel="shortcut icon" type="image/x-icon" href="/gcp_blog/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="how to create a Kubeflow Pipelines component from a python function, and define and deploy pipelines from a notebook" />
+<meta property="og:description" content="how to create a Kubeflow Pipelines component from a python function, and define and deploy pipelines from a notebook" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-10-26T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"how to create a Kubeflow Pipelines component from a python function, and define and deploy pipelines from a notebook","@type":"BlogPosting","headline":"Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation","dateModified":"2020-10-26T00:00:00-05:00","datePublished":"2020-10-26T00:00:00-05:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
+<link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head><body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/gcp_blog/">Amy on GCP</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/gcp_blog/about/">About Me</a><a class="page-link" href="/gcp_blog/search/">Search</a><a class="page-link" href="/gcp_blog/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Keras Tuner KFP example, part II— creating a lightweight component for metrics evaluation</h1><p class="page-description">how to create a Kubeflow Pipelines component from a python function, and define and deploy pipelines from a notebook</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-10-26T00:00:00-05:00" itemprop="datePublished">
+        Oct 26, 2020
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      10 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i>
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#ml">ml</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#kfp">kfp</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#mlops">mlops</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#keras">keras</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#hp_tuning">hp_tuning</a>
+        
+      
+      </p>
+    
+
+    </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#setup">Setup</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#create-an-ai-platform-notebooks-instance">Create an AI Platform Notebooks instance</a></li>
+<li class="toc-entry toc-h3"><a href="#install-the-kfp-sdk">Install the KFP SDK</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#defining-a-new-lightweight-component-based-on-a-python-function">Defining a new ‘lightweight component’ based on a python function</a></li>
+<li class="toc-entry toc-h2"><a href="#define-a-pipeline-that-uses-the-new-metrics-op">Define a pipeline that uses the new “metrics” op</a></li>
+<li class="toc-entry toc-h2"><a href="#use-the-new-metrics-op-with-the-full-keras-tuner-pipeline">Use the new “metrics” op with the full Keras Tuner pipeline</a></li>
+<li class="toc-entry toc-h2"><a href="#more-detail-on-the-code-and-requesting-predictions-from-your-model">More detail on the code, and requesting predictions from your model</a></li>
+</ul><p>This <a href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html">blog post</a> and accompanying <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">tutorial</a> walked through how to build a <a href="https://www.kubeflow.org/docs/pipelines/">Kubeflow Pipelines</a> (KFP) pipeline that uses the <a href="https://blog.tensorflow.org/2020/01/hyperparameter-tuning-with-keras-tuner.html">Keras Tuner</a> to build a hyperparameter-tuning workflow that uses distributed HP search.</p>
+
+<p>That pipeline does HP tuning, then runs full training on the N best parameter sets identified from the HP search, then deploys the full models to <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>.<br>
 One thing that was missing from that pipeline was any check on the quality of the trained models prior to deployment to TF-Serving.</p>
 
 <p>This post is based on an <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/notebooks/metrics_eval_component.ipynb">example notebook</a>, and is a follow-on to that tutorial.  You can follow along in the notebook instead if you like (see below).</p>
@@ -8,17 +152,20 @@ One thing that was missing from that pipeline was any check on the quality of th
 <p>Here, we’ll show how you can create a KFP “lightweight component”, built from a python function, to do a simple threshold check on some of the model metrics in order to decide whether to deploy the model. (This is a pretty simple approach, that we’re using for illustrative purposes; for production models you’d probably want to do more sophisticated analyses. The <a href="https://www.tensorflow.org/tfx/model_analysis/get_started">TFMA library</a> might be of interest).
 We’ll also show how to use the KFP SDK to define and run pipelines from a notebook.</p>
 
-<h2 id="setup">Setup</h2>
+<h2 id="setup">
+<a class="anchor" href="#setup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setup</h2>
 
 <p>This example assumes that you’ve <strong>done the setup indicated in the <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a></strong>, and have an AI Platform Pipelines (Hosted KFP) installation, with GPU node pools added to the cluster.</p>
 
-<h3 id="create-an-ai-platform-notebooks-instance">Create an AI Platform Notebooks instance</h3>
+<h3 id="create-an-ai-platform-notebooks-instance">
+<a class="anchor" href="#create-an-ai-platform-notebooks-instance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Create an AI Platform Notebooks instance</h3>
 
 <p>In addition, create an AI Platform Notebooks instance on which to run <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/notebooks/metrics_eval_component.ipynb">the example notebook</a> on which this post is based. See setup instructions <a href="https://cloud.google.com/ai-platform/notebooks/docs">here</a>. (You can run this notebook in other environments, including, locally, but that requires additional auth setup that we won’t go into here).</p>
 
 <p><strong>Once your notebook instance is set up, you should be able to use <a href="https://console.cloud.google.com/ai-platform/notebooks/deploy-notebook?name=Create%20a%20new%20KFP%20component%20from%20a%20notebook&amp;download_url=https%3A%2F%2Fraw.githubusercontent.com%2Famygdala%2Fcode-snippets%2Fmaster%2Fml%2Fkubeflow-pipelines%2Fkeras_tuner%2Fnotebooks%2Fmetrics_eval_component.ipynb&amp;url=https%3A%2F%2Fgithub.com%2Famygdala%2Fcode-snippets%2Fblob%2Fmaster%2Fml%2Fkubeflow-pipelines%2Fkeras_tuner%2Fnotebooks%2Fmetrics_eval_component.ipynb">this link</a> to upload and run the notebook.</strong></p>
 
-<h3 id="install-the-kfp-sdk">Install the KFP SDK</h3>
+<h3 id="install-the-kfp-sdk">
+<a class="anchor" href="#install-the-kfp-sdk" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install the KFP SDK</h3>
 
 <p>Next, we’ll install the KFP SDK.  In a notebook, you may need to restart the kernel so it’s available for import.</p>
 
@@ -34,7 +181,8 @@ We’ll also show how to use the KFP SDK to define and run pipelines from a note
 <span class="kn">import</span> <span class="nn">kfp.components</span> <span class="k">as</span> <span class="n">comp</span>
 </code></pre></div></div>
 
-<h2 id="defining-a-new-lightweight-component-based-on-a-python-function">Defining a new ‘lightweight component’ based on a python function</h2>
+<h2 id="defining-a-new-lightweight-component-based-on-a-python-function">
+<a class="anchor" href="#defining-a-new-lightweight-component-based-on-a-python-function" aria-hidden="true"><span class="octicon octicon-link"></span></a>Defining a new ‘lightweight component’ based on a python function</h2>
 
 <p>‘Lightweight’ KFP python components allow you to create a component from a python function definition, and do not require you to build a new container image for every code change. They’re helpful for fast iteration in a notebook environment. You can read more <a href="https://github.com/kubeflow/pipelines/blob/master/samples/core/lightweight_component/lightweight_component.ipynb">here</a>.</p>
 
@@ -88,7 +236,8 @@ Here, we’re using one of the <a href="https://cloud.google.com/ai-platform/dee
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">eval_metrics_op</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">func_to_container_op</span><span class="p">(</span><span class="n">eval_metrics</span><span class="p">,</span> <span class="n">base_image</span><span class="o">=</span><span class="s">'gcr.io/deeplearning-platform-release/tf2-cpu.2-3:latest'</span><span class="p">)</span>
 </code></pre></div></div>
 
-<h2 id="define-a-pipeline-that-uses-the-new-metrics-op">Define a pipeline that uses the new “metrics” op</h2>
+<h2 id="define-a-pipeline-that-uses-the-new-metrics-op">
+<a class="anchor" href="#define-a-pipeline-that-uses-the-new-metrics-op" aria-hidden="true"><span class="octicon octicon-link"></span></a>Define a pipeline that uses the new “metrics” op</h2>
 
 <p>Now, we can define a new pipeline that uses the new op and makes the model serving conditional on the results.</p>
 
@@ -187,7 +336,7 @@ If so (using the KFP <code class="highlighter-rouge">dsl.Condition</code> constr
 
 <p>Now we’ll compile and run the pipeline.</p>
 
-<p>Note that this pipeline is configured to use a GPU node for the training step, so make sure that you have set up a GPU node pool for the cluster that your KFP installation is running on, as described in this <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a>. Note also that GPU nodes are more expensive.<br />
+<p>Note that this pipeline is configured to use a GPU node for the training step, so make sure that you have set up a GPU node pool for the cluster that your KFP installation is running on, as described in this <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a>. Note also that GPU nodes are more expensive.<br>
 If you want, you can comment out the <code class="highlighter-rouge">train.set_gpu_limit(2)</code> line in the pipeline definition above to run training on a CPU node.</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">compiler</span><span class="o">.</span><span class="n">Compiler</span><span class="p">()</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="n">bikes_weather_metrics</span><span class="p">,</span> <span class="s">'bikes_weather_metrics.tar.gz'</span><span class="p">)</span>
@@ -205,7 +354,8 @@ If you want, you can comment out the <code class="highlighter-rouge">train.set_g
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">kfp</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">kfp_endpoint</span><span class="p">)</span><span class="o">.</span><span class="n">create_run_from_pipeline_func</span><span class="p">(</span><span class="o">&lt;</span><span class="n">pipeline_function_name</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">arguments</span><span class="o">=</span><span class="p">{})</span>
 </code></pre></div></div>
 
-<h2 id="use-the-new-metrics-op-with-the-full-keras-tuner-pipeline">Use the new “metrics” op with the full Keras Tuner pipeline</h2>
+<h2 id="use-the-new-metrics-op-with-the-full-keras-tuner-pipeline">
+<a class="anchor" href="#use-the-new-metrics-op-with-the-full-keras-tuner-pipeline" aria-hidden="true"><span class="octicon octicon-link"></span></a>Use the new “metrics” op with the full Keras Tuner pipeline</h2>
 
 <p>To keep things simple, the pipeline above didn’t do an HP tuning search.
 Below is how the full pipeline from <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">this tutorial</a> would be redefined to use this new op.</p>
@@ -283,15 +433,42 @@ Below is how the full pipeline from <a href="https://github.com/amygdala/code-sn
 
 <p>If you want, you can compile and run this pipeline the same way as was done in the previous section. You can also find this pipeline in the example repo <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/example_pipelines/bw_ktune_metrics.py">here</a>.</p>
 
-<h2 id="more-detail-on-the-code-and-requesting-predictions-from-your-model">More detail on the code, and requesting predictions from your model</h2>
+<h2 id="more-detail-on-the-code-and-requesting-predictions-from-your-model">
+<a class="anchor" href="#more-detail-on-the-code-and-requesting-predictions-from-your-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>More detail on the code, and requesting predictions from your model</h2>
 
 <p>This example didn’t focus on the details of the pipeline component (step) implementations.  The training component uses a Keras model (TF 2.3). The serving component uses <a href="https://www.tensorflow.org/tfx/guide/serving">TF-serving</a>: once the serving service is up and running, you can send prediction requests to your trained model.</p>
 
 <p>You can find more detail on these components, and an example of sending a prediction request, <a href="https://github.com/amygdala/code-snippets/tree/master/ml/kubeflow-pipelines/keras_tuner">here</a>.</p>
 
-<hr />
-<p>Copyright 2020, Google, LLC. Licensed under the Apache License, Version 2.0 (the “License”); you may not use this file except in compliance with the License. You may obtain a copy of the License at</p>
+  </div><a class="u-url" href="/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/gcp_blog/"></data>
 
-<p>http://www.apache.org/licenses/LICENSE-2.0</p>
+  <div class="wrapper">
 
-<p>Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</p>
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/gcp_blog/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/gcp_blog/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Using Google Cloud Platform</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
