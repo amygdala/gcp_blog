@@ -346,4 +346,3 @@ This blog post showed how to build Kubeflow Pipeline components, using the TFDV 
 [24]:	https://cloud.google.com/storage
 [25]:	https://cloud.google.com/functions/docs/
 
-#ml #kfp #ml_ops #blog_posts
