@@ -8,12 +8,12 @@ title: Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data dri
 
 ## Introduction
 
-With ML workflows, it is often insufficient to train and deploy a given model just once.  Even if the model has desired accuracy initially, this can change if the data used for making prediction requests becomes— perhaps over time— sufficiently different from the data used to originally train the model.  
+With ML workflows, it is often insufficient to train and deploy a given model just once.  Even if the model has desired accuracy initially, this can change if the data used for making prediction requests becomes— perhaps over time— sufficiently different from the data used to originally train the model.
 
 When new data becomes available, which could be used for retraining a model, it can be helpful to apply techniques for analyzing _data ‘drift’_, and determining whether the drift is sufficiently anomalous to warrant retraining yet.
 It can also be useful to trigger such an analysis— and potential re-run of your training pipeline— _automatically_, upon arrival of new data.
 
-This blog post highlights an [example notebook][1] that shows how to set up such a scenario with [Kubeflow Pipelines][2] (KFP).  
+This blog post highlights an [example notebook][1] that shows how to set up such a scenario with [Kubeflow Pipelines][2] (KFP).
 It shows how to build a pipeline that checks for statistical drift across successive versions of a dataset and uses that information to make a decision on whether to (re)train a model[^1]; and how to configure event-driven deployment of pipeline jobs when new data arrives.
 
 The notebook builds on an example highlighted in a [previous blog post][3] — which shows a KFP training and serving pipeline— and introduces two primary new concepts:
@@ -30,17 +30,17 @@ The machine learning task uses a tabular dataset that joins London bike rental i
 
 ## Running the example notebook
 
-The [example notebook][10] requires a [Google Cloud Platform (GCP)][11] account and project, ideally with quota for using GPUs, and— as detailed in the notebook— an installation of **AI Platform Pipelines (Hosted Kubeflow Pipelines)** (that is, an installation of KFP on [Google Kubernetes Engine (GKE)][12]), with a few additional configurations once installation is complete.   
+The [example notebook][10] requires a [Google Cloud Platform (GCP)][11] account and project, ideally with quota for using GPUs, and— as detailed in the notebook— an installation of **AI Platform Pipelines (Hosted Kubeflow Pipelines)** (that is, an installation of KFP on [Google Kubernetes Engine (GKE)][12]), with a few additional configurations once installation is complete.
 
-The notebook can be run using either [Colab][13] or [AI Platform Notebooks][14].
+The notebook can be run using either [Colab][13] ([open directly](https://colab.research.google.com/github/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb)) or [AI Platform Notebooks][14] ([open directly](https://console.cloud.google.com/ai-platform/notebooks/deploy-notebook?download_url=https://raw.githubusercontent.com/amygdala/code-snippets/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb)).
 
 ## Creating TFDV-based KFP components
 
 Our first step is to build the TFDV components that we want to use in our pipeline.
 
-> Note: For this example, our training data is in GCS, in CSV-formatted files.  So, we can take advantage of TFDV’s ability to process CSV files.  The TFDV libraries can also process files in `TFRecords` format. 
+> Note: For this example, our training data is in GCS, in CSV-formatted files.  So, we can take advantage of TFDV’s ability to process CSV files.  The TFDV libraries can also process files in `TFRecords` format.
 
-We'll define both TFDV KFP pipeline *components* as ['lightweight' Python-function-based components][15]. For each component, we define a function, then call `kfp.components.func_to_container_op()` on that function to build a **reusable** component in `.yaml` format. 
+We'll define both TFDV KFP pipeline *components* as ['lightweight' Python-function-based components][15]. For each component, we define a function, then call `kfp.components.func_to_container_op()` on that function to build a **reusable** component in `.yaml` format.
 Let’s take a closer look at how this works (details are in the [notebook][16]).
 
 Below is the Python function we’ll use to generate TFDV statistics from a collection of `csv` files.  The function— and the component we’ll create from it— outputs the path to the generated stats file.  When we define a pipeline that uses this component, we’ll use this step’s output as input to another pipeline step.
@@ -110,7 +110,7 @@ The `tensorflow_data_validation.validate_statistics()` call will then tell us wh
       statistics=stats2, schema=schema1, previous_statistics=stats1)
 ```
 
-(The details of this second component definition are in the example notebook). 
+(The details of this second component definition are in the example notebook).
 
 ##  Defining a pipeline that uses the TFDV components
 
@@ -118,7 +118,7 @@ After we’ve defined both TFDV components— one to generate stats for a datase
 
 ### Instantiate pipeline _ops_ from the components
 
-KFP components in `yaml` format are shareable and reusable.  We’ll build our pipeline by starting with some already-built components— (described in more detail [here][20])— that support our basic ‘train/evaluate/deploy’ workflow. 
+KFP components in `yaml` format are shareable and reusable.  We’ll build our pipeline by starting with some already-built components— (described in more detail [here][20])— that support our basic ‘train/evaluate/deploy’ workflow.
 
 We’ll instantiate some pipeline ops from these pre-existing components like this, by loading them via URL:
 
@@ -146,7 +146,7 @@ tfdv_drift_op = comp.load_component_from_file(
 
 Then, we define a KFP pipeline from the defined ops.  We’re not showing the pipeline in full here— see the notebook for details.
 Two pipeline steps use the `tfdv_op`, which generates the stats.  `tfdv1` generates stats for the test data, and `tfdv2` for the training data.
-In the following, you can see that the `tfdv_drift` step takes as input the output from the `tfdv2` (stats for training data) step.  
+In the following, you can see that the `tfdv_drift` step takes as input the output from the `tfdv2` (stats for training data) step.
 
 
 ```python
@@ -154,10 +154,10 @@ In the following, you can see that the `tfdv_drift` step takes as input the outp
   name='bikes_weather_tfdv',
   description='Model bike rental duration given weather'
 )
-def bikes_weather_tfdv( 
+def bikes_weather_tfdv(
   ... other pipeline params ...
-  working_dir: str = 'gs://YOUR/GCS/PATH',  
-  data_dir: str = 'gs://aju-dev-demos-codelabs/bikes_weather/', 
+  working_dir: str = 'gs://YOUR/GCS/PATH',
+  data_dir: str = 'gs://aju-dev-demos-codelabs/bikes_weather/',
   project_id: str = 'YOUR-PROJECT-ID',
   region: str = 'us-central1',
   requirements_file: str = 'requirements.txt',
@@ -174,8 +174,8 @@ def bikes_weather_tfdv(
     job_name='%s-1' % (job_name,),
     use_dataflow=use_dataflow,
     project_id=project_id, region=region,
-    gcs_temp_location='%s/tfdv_expers/tmp' % (working_dir,), 
-    gcs_staging_location='%s/tfdv_expers' % (working_dir,), 
+    gcs_temp_location='%s/tfdv_expers/tmp' % (working_dir,),
+    gcs_staging_location='%s/tfdv_expers' % (working_dir,),
     whl_location=whl_location, requirements_file=requirements_file
     )
   tfdv2 = tfdv_op(  # TFDV stats for the training data
@@ -185,17 +185,17 @@ def bikes_weather_tfdv(
     job_name='%s-2' % (job_name,),
     use_dataflow=use_dataflow,
     project_id=project_id, region=region,
-    gcs_temp_location='%s/tfdv_expers/tmp' % (working_dir,), 
-    gcs_staging_location='%s/tfdv_expers' % (working_dir,), 
+    gcs_temp_location='%s/tfdv_expers/tmp' % (working_dir,),
+    gcs_staging_location='%s/tfdv_expers' % (working_dir,),
     whl_location=whl_location, requirements_file=requirements_file
     )
 
   # compare generated training data stats with stats from a previous version
   # of the training data set.
   tfdv_drift = tfdv_drift_op(stats_older_path, tfdv2.outputs['stats_path'])
-  
+
   # proceed with training if drift is detected (or if no previous stats were provided)
-  with dsl.Condition(tfdv_drift.outputs['drift'] == 'true'):  
+  with dsl.Condition(tfdv_drift.outputs['drift'] == 'true'):
     train = train_op(...)
     eval_metrics = eval_metrics_op(...)
     with dsl.Condition(eval_metrics.outputs['deploy'] == 'deploy'):
@@ -212,7 +212,7 @@ Here’s the [DAG][21] for this pipeline.  You can see the conditional expressio
 <figcaption><br/><i>The pipeline DAG</i></figcaption>
 </figure>
 
-Here’s a pipeline run in progress: 
+Here’s a pipeline run in progress:
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" width="60%"/></a>
@@ -234,7 +234,7 @@ We’ll define and deploy a [Cloud Functions (GCF)][25] function that launches a
 In most cases, you don’t want to launch a new pipeline run for every new file added to a dataset— since typically, the dataset will be comprised of a collection of files, to which you will add/update multiple files in a batch. So, you don’t want the ‘trigger bucket’ to be the dataset bucket (if the data lives on GCS)— that will trigger unwanted pipeline runs.
 Instead, we’ll trigger a pipeline run after the upload of a _batch_ of new data has completed.
 
-To do this, we’ll use an approach where the the 'trigger' bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained. 
+To do this, we’ll use an approach where the the 'trigger' bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained.
 A trigger file is uploaded once the new data upload has completed, and that upload triggers a run of the GCF function, which in turn reads info on the new data path from the trigger file and launches the pipeline job.
 
 #### Define the GCF function
@@ -283,19 +283,19 @@ def gcs_update(data, context):
     # as parameter values.
     logging.info('running pipeline with id %s...', PIPELINE_ID)
     # create the client object
-    client = kfp.Client(host=PIPELINE_HOST)    
+    client = kfp.Client(host=PIPELINE_HOST)
     # deploy the pipeline run
     run = client.run_pipeline(EXP_ID, 'bw_tfdv_gcf', pipeline_id=PIPELINE_ID,
                           params={'working_dir': WORKING_DIR,
                                   'project_id': PIPELINE_PROJECT_ID,
                                   'use_dataflow': USE_DATAFLOW,
                                   'data_dir': trigger_file_info[0],
-                                  'stats_older_path': trigger_file_info[1]})     
+                                  'stats_older_path': trigger_file_info[1]})
 
     logging.info('job response: %s', run)
 ```
 
-Then we’ll deploy the GCF function as follows. Note that we’re indicating to use the `gcs_update` definition (from `main.py`), and specifying the trigger bucket.   Note also how we're setting environment vars as part of the deployment. 
+Then we’ll deploy the GCF function as follows. Note that we’re indicating to use the `gcs_update` definition (from `main.py`), and specifying the trigger bucket.   Note also how we're setting environment vars as part of the deployment.
 
 ```bash
 gcloud functions deploy gcs_update --set-env-vars \
@@ -320,7 +320,7 @@ This blog post showed how to build Kubeflow Pipeline components, using the TFDV 
 
 [^1]:	In this example, we show full model retraining on a new dataset.  An alternate scenario— not covered here— could involve _tuning_ an existing model with new data.
 
-[1]:	https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg
+[1]:	https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb
 [2]:	https://www.kubeflow.org/docs/pipelines/
 [3]:	https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html
 [4]:	https://www.tensorflow.org/tfx/guide/tfdv
@@ -329,19 +329,19 @@ This blog post showed how to build Kubeflow Pipeline components, using the TFDV 
 [7]:	https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html
 [8]:	https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html
 [9]:	https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md
-[10]:	https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg
+[10]:	https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb
 [11]:	https://cloud.google.com/
 [12]:	https://cloud.google.com/kubernetes-engine
 [13]:	https://colab.research.google.com/
 [14]:	https://cloud.google.com/ai-platform-notebooks
 [15]:	https://www.kubeflow.org/docs/pipelines/sdk/python-function-components/
-[16]:	https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg
+[16]:	https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb
 [17]:	https://beam.apache.org/
 [18]:	https://cloud.google.com/dataflow#section-5
 [19]:	https://www.tensorflow.org/tfx/data_validation/get_started#checking_data_skew_and_drift
 [20]:	https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md
 [21]:	https://en.wikipedia.org/wiki/Directed_acyclic_graph
-[22]:	https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg
+[22]:	https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb
 [23]:	https://cloud.google.com/functions/docs/
 [24]:	https://cloud.google.com/storage
 [25]:	https://cloud.google.com/functions/docs/
