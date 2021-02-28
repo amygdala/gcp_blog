@@ -159,7 +159,7 @@ window.onload = wrap_img;
 <p>When new data becomes available, which could be used for retraining a model, it can be helpful to apply techniques for analyzing <em>data ‘drift’</em>, and determining whether the drift is sufficiently anomalous to warrant retraining yet.
 It can also be useful to trigger such an analysis— and potential re-run of your training pipeline— <em>automatically</em>, upon arrival of new data.</p>
 
-<p>This blog post highlights an <a href="https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg">example notebook</a> that shows how to set up such a scenario with <a href="https://www.kubeflow.org/docs/pipelines/">Kubeflow Pipelines</a> (KFP).<br>
+<p>This blog post highlights an <a href="https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb">example notebook</a> that shows how to set up such a scenario with <a href="https://www.kubeflow.org/docs/pipelines/">Kubeflow Pipelines</a> (KFP).
 It shows how to build a pipeline that checks for statistical drift across successive versions of a dataset and uses that information to make a decision on whether to (re)train a model<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup>; and how to configure event-driven deployment of pipeline jobs when new data arrives.</p>
 
 <p>The notebook builds on an example highlighted in a <a href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html">previous blog post</a> — which shows a KFP training and serving pipeline— and introduces two primary new concepts:</p>
@@ -179,9 +179,9 @@ It shows how to build a pipeline that checks for statistical drift across succes
 <h2 id="running-the-example-notebook">
 <a class="anchor" href="#running-the-example-notebook" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the example notebook</h2>
 
-<p>The <a href="https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg">example notebook</a> requires a <a href="https://cloud.google.com/">Google Cloud Platform (GCP)</a> account and project, ideally with quota for using GPUs, and— as detailed in the notebook— an installation of <strong>AI Platform Pipelines (Hosted Kubeflow Pipelines)</strong> (that is, an installation of KFP on <a href="https://cloud.google.com/kubernetes-engine">Google Kubernetes Engine (GKE)</a>), with a few additional configurations once installation is complete.</p>
+<p>The <a href="https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb">example notebook</a> requires a <a href="https://cloud.google.com/">Google Cloud Platform (GCP)</a> account and project, ideally with quota for using GPUs, and— as detailed in the notebook— an installation of <strong>AI Platform Pipelines (Hosted Kubeflow Pipelines)</strong> (that is, an installation of KFP on <a href="https://cloud.google.com/kubernetes-engine">Google Kubernetes Engine (GKE)</a>), with a few additional configurations once installation is complete.</p>
 
-<p>The notebook can be run using either <a href="https://colab.research.google.com/">Colab</a> or <a href="https://cloud.google.com/ai-platform-notebooks">AI Platform Notebooks</a>.</p>
+<p>The notebook can be run using either <a href="https://colab.research.google.com/">Colab</a> (<a href="https://colab.research.google.com/github/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb">open directly</a>) or <a href="https://cloud.google.com/ai-platform-notebooks">AI Platform Notebooks</a> (<a href="https://console.cloud.google.com/ai-platform/notebooks/deploy-notebook?download_url=https://raw.githubusercontent.com/amygdala/code-snippets/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb">open directly</a>)</p>
 
 <h2 id="creating-tfdv-based-kfp-components">
 <a class="anchor" href="#creating-tfdv-based-kfp-components" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating TFDV-based KFP components</h2>
@@ -192,8 +192,8 @@ It shows how to build a pipeline that checks for statistical drift across succes
   <p>Note: For this example, our training data is in GCS, in CSV-formatted files.  So, we can take advantage of TFDV’s ability to process CSV files.  The TFDV libraries can also process files in <code class="highlighter-rouge">TFRecords</code> format.</p>
 </blockquote>
 
-<p>We’ll define both TFDV KFP pipeline <em>components</em> as <a href="https://www.kubeflow.org/docs/pipelines/sdk/python-function-components/">‘lightweight’ Python-function-based components</a>. For each component, we define a function, then call <code class="highlighter-rouge">kfp.components.func_to_container_op()</code> on that function to build a <strong>reusable</strong> component in <code class="highlighter-rouge">.yaml</code> format. 
-Let’s take a closer look at how this works (details are in the <a href="https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg">notebook</a>).</p>
+<p>We’ll define both TFDV KFP pipeline <em>components</em> as <a href="https://www.kubeflow.org/docs/pipelines/sdk/python-function-components/">‘lightweight’ Python-function-based components</a>. For each component, we define a function, then call <code class="highlighter-rouge">kfp.components.func_to_container_op()</code> on that function to build a <strong>reusable</strong> component in <code class="highlighter-rouge">.yaml</code> format.
+Let’s take a closer look at how this works (details are in the <a href="https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb">notebook</a>).</p>
 
 <p>Below is the Python function we’ll use to generate TFDV statistics from a collection of <code class="highlighter-rouge">csv</code> files.  The function— and the component we’ll create from it— outputs the path to the generated stats file.  When we define a pipeline that uses this component, we’ll use this step’s output as input to another pipeline step.
 TFDV uses a <a href="https://beam.apache.org/">Beam</a> pipeline— not to be confused with KFP Pipelines— to implement the stats generation. Depending upon configuration, the component can use either the Direct (local) runner or the <a href="https://cloud.google.com/dataflow#section-5">Dataflow</a> runner.  Running the Beam pipeline on Dataflow rather than locally can make sense with large datasets.</p>
@@ -300,10 +300,10 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
   <span class="n">name</span><span class="o">=</span><span class="s">'bikes_weather_tfdv'</span><span class="p">,</span>
   <span class="n">description</span><span class="o">=</span><span class="s">'Model bike rental duration given weather'</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">bikes_weather_tfdv</span><span class="p">(</span> 
+<span class="k">def</span> <span class="nf">bikes_weather_tfdv</span><span class="p">(</span>
   <span class="o">...</span> <span class="n">other</span> <span class="n">pipeline</span> <span class="n">params</span> <span class="o">...</span>
-  <span class="n">working_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://YOUR/GCS/PATH'</span><span class="p">,</span>  
-  <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://aju-dev-demos-codelabs/bikes_weather/'</span><span class="p">,</span> 
+  <span class="n">working_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://YOUR/GCS/PATH'</span><span class="p">,</span>
+  <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'gs://aju-dev-demos-codelabs/bikes_weather/'</span><span class="p">,</span>
   <span class="n">project_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'YOUR-PROJECT-ID'</span><span class="p">,</span>
   <span class="n">region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'us-central1'</span><span class="p">,</span>
   <span class="n">requirements_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'requirements.txt'</span><span class="p">,</span>
@@ -320,8 +320,8 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
     <span class="n">job_name</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s-1'</span> <span class="o">%</span> <span class="p">(</span><span class="n">job_name</span><span class="p">,),</span>
     <span class="n">use_dataflow</span><span class="o">=</span><span class="n">use_dataflow</span><span class="p">,</span>
     <span class="n">project_id</span><span class="o">=</span><span class="n">project_id</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
-    <span class="n">gcs_temp_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers/tmp'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span> 
-    <span class="n">gcs_staging_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span> 
+    <span class="n">gcs_temp_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers/tmp'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span>
+    <span class="n">gcs_staging_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span>
     <span class="n">whl_location</span><span class="o">=</span><span class="n">whl_location</span><span class="p">,</span> <span class="n">requirements_file</span><span class="o">=</span><span class="n">requirements_file</span>
     <span class="p">)</span>
   <span class="n">tfdv2</span> <span class="o">=</span> <span class="n">tfdv_op</span><span class="p">(</span>  <span class="c1"># TFDV stats for the training data
@@ -331,17 +331,17 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
     <span class="n">job_name</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s-2'</span> <span class="o">%</span> <span class="p">(</span><span class="n">job_name</span><span class="p">,),</span>
     <span class="n">use_dataflow</span><span class="o">=</span><span class="n">use_dataflow</span><span class="p">,</span>
     <span class="n">project_id</span><span class="o">=</span><span class="n">project_id</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
-    <span class="n">gcs_temp_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers/tmp'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span> 
-    <span class="n">gcs_staging_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span> 
+    <span class="n">gcs_temp_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers/tmp'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span>
+    <span class="n">gcs_staging_location</span><span class="o">=</span><span class="s">'</span><span class="si">%</span><span class="s">s/tfdv_expers'</span> <span class="o">%</span> <span class="p">(</span><span class="n">working_dir</span><span class="p">,),</span>
     <span class="n">whl_location</span><span class="o">=</span><span class="n">whl_location</span><span class="p">,</span> <span class="n">requirements_file</span><span class="o">=</span><span class="n">requirements_file</span>
     <span class="p">)</span>
 
   <span class="c1"># compare generated training data stats with stats from a previous version
 </span>  <span class="c1"># of the training data set.
 </span>  <span class="n">tfdv_drift</span> <span class="o">=</span> <span class="n">tfdv_drift_op</span><span class="p">(</span><span class="n">stats_older_path</span><span class="p">,</span> <span class="n">tfdv2</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'stats_path'</span><span class="p">])</span>
-  
+
   <span class="c1"># proceed with training if drift is detected (or if no previous stats were provided)
-</span>  <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span><span class="n">tfdv_drift</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'drift'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'true'</span><span class="p">):</span>  
+</span>  <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span><span class="n">tfdv_drift</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'drift'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'true'</span><span class="p">):</span>
     <span class="n">train</span> <span class="o">=</span> <span class="n">train_op</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
     <span class="n">eval_metrics</span> <span class="o">=</span> <span class="n">eval_metrics_op</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span><span class="n">eval_metrics</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">'deploy'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'deploy'</span><span class="p">):</span>
@@ -365,7 +365,7 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
 <figcaption><br><i>A pipeline run in progress.</i></figcaption>
 </figure>
 
-<p>See the <a href="https://colab.research.google.com/drive/1EnJybX7Xcr6BAu8L2ln1YqEBcZFoChAg">example notebook</a> for more details on how to run this pipeline.</p>
+<p>See the <a href="https://github.com/amygdala/code-snippets/blob/master/ml/notebook_examples/hosted_kfp/event_triggered_kfp_pipeline_bw.ipynb">example notebook</a> for more details on how to run this pipeline.</p>
 
 <h2 id="event-triggered-pipeline-runs">
 <a class="anchor" href="#event-triggered-pipeline-runs" aria-hidden="true"><span class="octicon octicon-link"></span></a>Event-triggered pipeline runs</h2>
@@ -382,7 +382,7 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
 <p>In most cases, you don’t want to launch a new pipeline run for every new file added to a dataset— since typically, the dataset will be comprised of a collection of files, to which you will add/update multiple files in a batch. So, you don’t want the ‘trigger bucket’ to be the dataset bucket (if the data lives on GCS)— that will trigger unwanted pipeline runs.
 Instead, we’ll trigger a pipeline run after the upload of a <em>batch</em> of new data has completed.</p>
 
-<p>To do this, we’ll use an approach where the the ‘trigger’ bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained. 
+<p>To do this, we’ll use an approach where the the ‘trigger’ bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained.
 A trigger file is uploaded once the new data upload has completed, and that upload triggers a run of the GCF function, which in turn reads info on the new data path from the trigger file and launches the pipeline job.</p>
 
 <h4 id="define-the-gcf-function">
@@ -430,14 +430,14 @@ A trigger file is uploaded once the new data upload has completed, and that uplo
 </span>    <span class="c1"># as parameter values.
 </span>    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'running pipeline with id </span><span class="si">%</span><span class="s">s...'</span><span class="p">,</span> <span class="n">PIPELINE_ID</span><span class="p">)</span>
     <span class="c1"># create the client object
-</span>    <span class="n">client</span> <span class="o">=</span> <span class="n">kfp</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">PIPELINE_HOST</span><span class="p">)</span>    
+</span>    <span class="n">client</span> <span class="o">=</span> <span class="n">kfp</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">PIPELINE_HOST</span><span class="p">)</span>
     <span class="c1"># deploy the pipeline run
 </span>    <span class="n">run</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">run_pipeline</span><span class="p">(</span><span class="n">EXP_ID</span><span class="p">,</span> <span class="s">'bw_tfdv_gcf'</span><span class="p">,</span> <span class="n">pipeline_id</span><span class="o">=</span><span class="n">PIPELINE_ID</span><span class="p">,</span>
                           <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s">'working_dir'</span><span class="p">:</span> <span class="n">WORKING_DIR</span><span class="p">,</span>
                                   <span class="s">'project_id'</span><span class="p">:</span> <span class="n">PIPELINE_PROJECT_ID</span><span class="p">,</span>
                                   <span class="s">'use_dataflow'</span><span class="p">:</span> <span class="n">USE_DATAFLOW</span><span class="p">,</span>
                                   <span class="s">'data_dir'</span><span class="p">:</span> <span class="n">trigger_file_info</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                                  <span class="s">'stats_older_path'</span><span class="p">:</span> <span class="n">trigger_file_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span>     
+                                  <span class="s">'stats_older_path'</span><span class="p">:</span> <span class="n">trigger_file_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'job response: </span><span class="si">%</span><span class="s">s'</span><span class="p">,</span> <span class="n">run</span><span class="p">)</span>
 </code></pre></div></div>
