@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.0.0">Jekyll</generator><link href="https://amygdala.github.io/gcp_blog/feed.xml" rel="self" type="application/atom+xml" /><link href="https://amygdala.github.io/gcp_blog/" rel="alternate" type="text/html" /><updated>2021-02-27T19:02:54-06:00</updated><id>https://amygdala.github.io/gcp_blog/feed.xml</id><title type="html">Amy on GCP</title><subtitle>Using Google Cloud Platform</subtitle><entry><title type="html">Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift</title><link href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html" rel="alternate" type="text/html" title="Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift" /><published>2021-02-26T00:00:00-06:00</published><updated>2021-02-26T00:00:00-06:00</updated><id>https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html">&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.0.0">Jekyll</generator><link href="https://amygdala.github.io/gcp_blog/feed.xml" rel="self" type="application/atom+xml" /><link href="https://amygdala.github.io/gcp_blog/" rel="alternate" type="text/html" /><updated>2021-03-09T13:39:49-06:00</updated><id>https://amygdala.github.io/gcp_blog/feed.xml</id><title type="html">Amy on GCP</title><subtitle>Using Google Cloud Platform</subtitle><entry><title type="html">Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift</title><link href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html" rel="alternate" type="text/html" title="Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift" /><published>2021-02-26T00:00:00-06:00</published><updated>2021-02-26T00:00:00-06:00</updated><id>https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered</id><content type="html" xml:base="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html">&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
 
 &lt;p&gt;With ML workflows, it is often insufficient to train and deploy a given model just once.  Even if the model has desired accuracy initially, this can change if the data used for making prediction requests becomes— perhaps over time— sufficiently different from the data used to originally train the model.&lt;/p&gt;
 
@@ -18,7 +18,7 @@ It shows how to build a pipeline that checks for statistical drift across succes
 &lt;p&gt;The machine learning task uses a tabular dataset that joins London bike rental information with weather data, and train a Keras model to predict rental duration. See &lt;a href=&quot;https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html&quot;&gt;this&lt;/a&gt; and &lt;a href=&quot;https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html&quot;&gt;this&lt;/a&gt; blog post and associated &lt;a href=&quot;https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md&quot;&gt;README&lt;/a&gt; for more background on the dataset and model architecture.&lt;/p&gt;
 
 &lt;figure&gt;
-&lt;a href=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png&quot; width=&quot;60%&quot; /&gt;&lt;/a&gt;
+&lt;a href=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png&quot; width=&quot;80%&quot; /&gt;&lt;/a&gt;
 &lt;figcaption&gt;&lt;br /&gt;&lt;i&gt;A pipeline run using TFDV-based components to detect 'data drift'.&lt;/i&gt;&lt;/figcaption&gt;
 &lt;/figure&gt;
 
@@ -196,14 +196,14 @@ In the following, you can see that the &lt;code class=&quot;highlighter-rouge&qu
 &lt;p&gt;Here’s the &lt;a href=&quot;https://en.wikipedia.org/wiki/Directed_acyclic_graph&quot;&gt;DAG&lt;/a&gt; for this pipeline.  You can see the conditional expressions reflected; and can see that the step to generates stats for the test dataset provides no downstream dependencies, but the stats on the training set are used as input for the drift detection step.&lt;/p&gt;
 
 &lt;figure&gt;
-&lt;a href=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png&quot; width=&quot;50%&quot; /&gt;&lt;/a&gt;
+&lt;a href=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png&quot; width=&quot;80%&quot; /&gt;&lt;/a&gt;
 &lt;figcaption&gt;&lt;br /&gt;&lt;i&gt;The pipeline DAG&lt;/i&gt;&lt;/figcaption&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;Here’s a pipeline run in progress:&lt;/p&gt;
 
 &lt;figure&gt;
-&lt;a href=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png&quot; width=&quot;60%&quot; /&gt;&lt;/a&gt;
+&lt;a href=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png&quot; width=&quot;80%&quot; /&gt;&lt;/a&gt;
 &lt;figcaption&gt;&lt;br /&gt;&lt;i&gt;A pipeline run in progress.&lt;/i&gt;&lt;/figcaption&gt;
 &lt;/figure&gt;
 

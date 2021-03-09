@@ -15,7 +15,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2021-02-26T00:00:00-06:00" />
 <script type="application/ld+json">
-{"description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","dateModified":"2021-02-26T00:00:00-06:00","datePublished":"2021-02-26T00:00:00-06:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"@context":"https://schema.org"}</script>
+{"datePublished":"2021-02-26T00:00:00-06:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","dateModified":"2021-02-26T00:00:00-06:00","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
 
@@ -36,7 +36,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2021-02-26T00:00:00-06:00" />
 <script type="application/ld+json">
-{"description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","dateModified":"2021-02-26T00:00:00-06:00","datePublished":"2021-02-26T00:00:00-06:00","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"@context":"https://schema.org"}</script>
+{"datePublished":"2021-02-26T00:00:00-06:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","dateModified":"2021-02-26T00:00:00-06:00","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
 <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
@@ -172,7 +172,7 @@ It shows how to build a pipeline that checks for statistical drift across succes
 <p>The machine learning task uses a tabular dataset that joins London bike rental information with weather data, and train a Keras model to predict rental duration. See <a href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html">this</a> and <a href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html">this</a> blog post and associated <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a> for more background on the dataset and model architecture.</p>
 
 <figure>
-<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" width="60%"></a>
+<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" width="80%"></a>
 <figcaption><br><i>A pipeline run using TFDV-based components to detect 'data drift'.</i></figcaption>
 </figure>
 
@@ -354,14 +354,14 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
 <p>Here’s the <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a> for this pipeline.  You can see the conditional expressions reflected; and can see that the step to generates stats for the test dataset provides no downstream dependencies, but the stats on the training set are used as input for the drift detection step.</p>
 
 <figure>
-<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" width="50%"></a>
+<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" width="80%"></a>
 <figcaption><br><i>The pipeline DAG</i></figcaption>
 </figure>
 
 <p>Here’s a pipeline run in progress:</p>
 
 <figure>
-<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" width="60%"></a>
+<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" width="80%"></a>
 <figcaption><br><i>A pipeline run in progress.</i></figcaption>
 </figure>
 
