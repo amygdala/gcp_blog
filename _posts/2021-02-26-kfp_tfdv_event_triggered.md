@@ -24,7 +24,7 @@ The notebook builds on an example highlighted in a [previous blog post][3] — w
 The machine learning task uses a tabular dataset that joins London bike rental information with weather data, and train a Keras model to predict rental duration. See [this][7] and [this][8] blog post and associated [README][9] for more background on the dataset and model architecture.
 
 <figure>
-<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" width="60%"/></a>
+<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" width="80%"/></a>
 <figcaption><br/><i>A pipeline run using TFDV-based components to detect 'data drift'.</i></figcaption>
 </figure>
 
@@ -208,14 +208,14 @@ While not all pipeline details are shown, you can see that this pipeline definit
 Here’s the [DAG][21] for this pipeline.  You can see the conditional expressions reflected; and can see that the step to generates stats for the test dataset provides no downstream dependencies, but the stats on the training set are used as input for the drift detection step.
 
 <figure>
-<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" width="50%"/></a>
+<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" width="80%"/></a>
 <figcaption><br/><i>The pipeline DAG</i></figcaption>
 </figure>
 
 Here’s a pipeline run in progress:
 
 <figure>
-<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" width="60%"/></a>
+<a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline_run.png" width="80%"/></a>
 <figcaption><br/><i>A pipeline run in progress.</i></figcaption>
 </figure>
 
