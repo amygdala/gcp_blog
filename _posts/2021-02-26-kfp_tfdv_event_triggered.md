@@ -21,7 +21,7 @@ The notebook builds on an example highlighted in a [previous blog post][3] — w
 -  the example demonstrates use of the [TensorFlow Data Validation (TFDV)][4] library to build pipeline components that derive **dataset statistics** and detect **drift** between older and newer dataset versions, and shows how to use drift information to decide whether to retrain a model on newer data.
 -  the example shows how to support **event-triggered** launch of Kubeflow Pipelines runs from a [Cloud Functions][5] (GCF) function, where the Function run is triggered by addition of a file to a given [Cloud Storage][6] (GCS) bucket.
 
-The machine learning task uses a tabular dataset that joins London bike rental information with weather data, and train a Keras model to predict rental duration. See [this][7] and [this][8] blog post and associated [README][9] for more background on the dataset and model architecture.
+The machine learning task uses a tabular dataset that joins London bike rental information with weather data, and trains a Keras model to predict rental duration. See [this][7] and [this][8] blog post and associated [README][9] for more background on the dataset and model architecture.
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" width="80%"/></a>
@@ -145,8 +145,8 @@ tfdv_drift_op = comp.load_component_from_file(
 ```
 
 Then, we define a KFP pipeline from the defined ops.  We’re not showing the pipeline in full here— see the notebook for details.
-Two pipeline steps use the `tfdv_op`, which generates the stats.  `tfdv1` generates stats for the test data, and `tfdv2` for the training data.
-In the following, you can see that the `tfdv_drift` step takes as input the output from the `tfdv2` (stats for training data) step.
+Two pipeline steps are based on the `tfdv_op`, which generates the stats.  `tfdv1` generates stats for the test data, and `tfdv2` for the training data.
+In the following, you can see that the `tfdv_drift` step (based on the `tfdv_drift_op`) takes as input the output from the `tfdv2` (stats for training data) step.
 
 
 ```python
@@ -205,7 +205,7 @@ def bikes_weather_tfdv(
 
 While not all pipeline details are shown, you can see that this pipeline definition includes some conditional expressions; parts of the pipeline will run only if an output of an ‘upstream’ step meets the given conditions.  We start the model training step if drift anomalies were detected.  (And, once training is completed, we’ll deploy the model for serving only if its evaluation metrics meet certain thresholds).
 
-Here’s the [DAG][21] for this pipeline.  You can see the conditional expressions reflected; and can see that the step to generates stats for the test dataset provides no downstream dependencies, but the stats on the training set are used as input for the drift detection step.
+Here’s the [DAG][21] for this pipeline.  You can see the conditional expressions reflected; and can see that the step to generate stats for the test dataset provides no downstream dependencies, but the stats on the training set are used as input for the drift detection step.
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" width="80%"/></a>
@@ -231,10 +231,10 @@ We’ll show how to do this using [Cloud Functions (GCF)][23], by setting up a f
 
 We’ll define and deploy a [Cloud Functions (GCF)][25] function that launches a run of this pipeline when new training data becomes available, as triggered by the creation or modification of a file in a ‘trigger’ bucket on GCS.
 
-In most cases, you don’t want to launch a new pipeline run for every new file added to a dataset— since typically, the dataset will be comprised of a collection of files, to which you will add/update multiple files in a batch. So, you don’t want the ‘trigger bucket’ to be the dataset bucket (if the data lives on GCS)— that will trigger unwanted pipeline runs.
+In most cases, you don’t want to launch a new pipeline run for every new file added to a dataset— since typically, the dataset will be comprised of a collection of files, to which you will add/update multiple files in a batch. So, you don’t want the ‘trigger bucket’ to be the dataset bucket (if the data lives on GCS)— as that will trigger unwanted pipeline runs.
 Instead, we’ll trigger a pipeline run after the upload of a _batch_ of new data has completed.
 
-To do this, we’ll use an approach where the the 'trigger' bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained.
+To do this, we’ll use an approach where the 'trigger' bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained.
 A trigger file is uploaded once the new data upload has completed, and that upload triggers a run of the GCF function, which in turn reads info on the new data path from the trigger file and launches the pipeline job.
 
 #### Define the GCF function
@@ -315,7 +315,10 @@ gs://path/to/stats/from/previous/dataset/stats.pb
 
 ## Summary
 
-This blog post showed how to build Kubeflow Pipeline components, using the TFDV libraries, to analyze datasets and detect data drift.  Then, it showed how to support event-triggered pipeline runs via GCF.
+This blog post showed how to build Kubeflow Pipeline components, using the TFDV libraries, to analyze datasets and detect data drift. Then, it showed how to support event-triggered pipeline runs via Cloud Functions.
+
+The post didn't include use of TFDV to visualize and explore the generated stats, but [this example notebook](https://colab.sandbox.google.com/github/tensorflow/tfx/blob/master/docs/tutorials/data_validation/tfdv_basic.ipynb) shows how you can do that.
+You can also [explore the samples](https://github.com/kubeflow/pipelines/tree/master/samples) in the Kubeflow Pipelines GitHub repo.
 
 
 [^1]:	In this example, we show full model retraining on a new dataset.  An alternate scenario— not covered here— could involve _tuning_ an existing model with new data.
