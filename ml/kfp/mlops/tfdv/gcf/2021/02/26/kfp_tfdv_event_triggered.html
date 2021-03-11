@@ -169,7 +169,7 @@ It shows how to build a pipeline that checks for statistical drift across succes
   <li>the example shows how to support <strong>event-triggered</strong> launch of Kubeflow Pipelines runs from a <a href="https://cloud.google.com/functions/docs/">Cloud Functions</a> (GCF) function, where the Function run is triggered by addition of a file to a given <a href="https://cloud.google.com/storage">Cloud Storage</a> (GCS) bucket.</li>
 </ul>
 
-<p>The machine learning task uses a tabular dataset that joins London bike rental information with weather data, and train a Keras model to predict rental duration. See <a href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html">this</a> and <a href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html">this</a> blog post and associated <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a> for more background on the dataset and model architecture.</p>
+<p>The machine learning task uses a tabular dataset that joins London bike rental information with weather data, and trains a Keras model to predict rental duration. See <a href="https://amygdala.github.io/gcp_blog/ml/kfp/kubeflow/keras/tensorflow/hp_tuning/2020/10/19/keras_tuner.html">this</a> and <a href="https://amygdala.github.io/gcp_blog/ml/kfp/mlops/keras/hp_tuning/2020/10/26/metrics_eval_component.html">this</a> blog post and associated <a href="https://github.com/amygdala/code-snippets/blob/master/ml/kubeflow-pipelines/keras_tuner/README.md">README</a> for more background on the dataset and model architecture.</p>
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/CleanShot%202021-02-26%20at%2011.30.13%402x.png" width="80%"></a>
@@ -293,8 +293,8 @@ The <code class="highlighter-rouge">tensorflow_data_validation.validate_statisti
 </code></pre></div></div>
 
 <p>Then, we define a KFP pipeline from the defined ops.  We’re not showing the pipeline in full here— see the notebook for details.
-Two pipeline steps use the <code class="highlighter-rouge">tfdv_op</code>, which generates the stats.  <code class="highlighter-rouge">tfdv1</code> generates stats for the test data, and <code class="highlighter-rouge">tfdv2</code> for the training data.
-In the following, you can see that the <code class="highlighter-rouge">tfdv_drift</code> step takes as input the output from the <code class="highlighter-rouge">tfdv2</code> (stats for training data) step.</p>
+Two pipeline steps are based on the <code class="highlighter-rouge">tfdv_op</code>, which generates the stats.  <code class="highlighter-rouge">tfdv1</code> generates stats for the test data, and <code class="highlighter-rouge">tfdv2</code> for the training data.
+In the following, you can see that the <code class="highlighter-rouge">tfdv_drift</code> step (based on the <code class="highlighter-rouge">tfdv_drift_op</code>) takes as input the output from the <code class="highlighter-rouge">tfdv2</code> (stats for training data) step.</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">dsl</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
   <span class="n">name</span><span class="o">=</span><span class="s">'bikes_weather_tfdv'</span><span class="p">,</span>
@@ -351,7 +351,7 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
 
 <p>While not all pipeline details are shown, you can see that this pipeline definition includes some conditional expressions; parts of the pipeline will run only if an output of an ‘upstream’ step meets the given conditions.  We start the model training step if drift anomalies were detected.  (And, once training is completed, we’ll deploy the model for serving only if its evaluation metrics meet certain thresholds).</p>
 
-<p>Here’s the <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a> for this pipeline.  You can see the conditional expressions reflected; and can see that the step to generates stats for the test dataset provides no downstream dependencies, but the stats on the training set are used as input for the drift detection step.</p>
+<p>Here’s the <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a> for this pipeline.  You can see the conditional expressions reflected; and can see that the step to generate stats for the test dataset provides no downstream dependencies, but the stats on the training set are used as input for the drift detection step.</p>
 
 <figure>
 <a href="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/kf-pls/bw_tfdv_pipeline.png" width="80%"></a>
@@ -379,10 +379,10 @@ In the following, you can see that the <code class="highlighter-rouge">tfdv_drif
 
 <p>We’ll define and deploy a <a href="https://cloud.google.com/functions/docs/">Cloud Functions (GCF)</a> function that launches a run of this pipeline when new training data becomes available, as triggered by the creation or modification of a file in a ‘trigger’ bucket on GCS.</p>
 
-<p>In most cases, you don’t want to launch a new pipeline run for every new file added to a dataset— since typically, the dataset will be comprised of a collection of files, to which you will add/update multiple files in a batch. So, you don’t want the ‘trigger bucket’ to be the dataset bucket (if the data lives on GCS)— that will trigger unwanted pipeline runs.
+<p>In most cases, you don’t want to launch a new pipeline run for every new file added to a dataset— since typically, the dataset will be comprised of a collection of files, to which you will add/update multiple files in a batch. So, you don’t want the ‘trigger bucket’ to be the dataset bucket (if the data lives on GCS)— as that will trigger unwanted pipeline runs.
 Instead, we’ll trigger a pipeline run after the upload of a <em>batch</em> of new data has completed.</p>
 
-<p>To do this, we’ll use an approach where the the ‘trigger’ bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained.
+<p>To do this, we’ll use an approach where the ‘trigger’ bucket is different from the bucket used to store dataset files. ‘Trigger files’ uploaded to that bucket are expected to contain the path of the updated dataset as well as the path to the data stats file generated for the last model trained.
 A trigger file is uploaded once the new data upload has completed, and that upload triggers a run of the GCF function, which in turn reads info on the new data path from the trigger file and launches the pipeline job.</p>
 
 <h4 id="define-the-gcf-function">
@@ -461,7 +461,10 @@ gs://path/to/stats/from/previous/dataset/stats.pb
 <h2 id="summary">
 <a class="anchor" href="#summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Summary</h2>
 
-<p>This blog post showed how to build Kubeflow Pipeline components, using the TFDV libraries, to analyze datasets and detect data drift.  Then, it showed how to support event-triggered pipeline runs via GCF.</p>
+<p>This blog post showed how to build Kubeflow Pipeline components, using the TFDV libraries, to analyze datasets and detect data drift. Then, it showed how to support event-triggered pipeline runs via Cloud Functions.</p>
+
+<p>The post didn’t include use of TFDV to visualize and explore the generated stats, but <a href="https://colab.sandbox.google.com/github/tensorflow/tfx/blob/master/docs/tutorials/data_validation/tfdv_basic.ipynb">this example notebook</a> shows how you can do that.
+You can also <a href="https://github.com/kubeflow/pipelines/tree/master/samples">explore the samples</a> in the Kubeflow Pipelines GitHub repo.</p>
 
 <div class="footnotes" role="doc-endnotes">
   <ol>
