@@ -7,7 +7,7 @@ title: Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data dri
 ---
 
 ## Introduction
-
+  
 With ML workflows, it is often insufficient to train and deploy a given model just once.  Even if the model has desired accuracy initially, this can change if the data used for making prediction requests becomes— perhaps over time— sufficiently different from the data used to originally train the model.
 
 When new data becomes available, which could be used for retraining a model, it can be helpful to apply techniques for analyzing _data ‘drift’_, and determining whether the drift is sufficiently anomalous to warrant retraining yet.
