@@ -15,7 +15,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2021-02-26T00:00:00-06:00" />
 <script type="application/ld+json">
-{"dateModified":"2021-02-26T00:00:00-06:00","datePublished":"2021-02-26T00:00:00-06:00","description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","@context":"https://schema.org"}</script>
+{"datePublished":"2021-02-26T00:00:00-06:00","headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","dateModified":"2021-02-26T00:00:00-06:00","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
 
@@ -36,7 +36,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2021-02-26T00:00:00-06:00" />
 <script type="application/ld+json">
-{"dateModified":"2021-02-26T00:00:00-06:00","datePublished":"2021-02-26T00:00:00-06:00","description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","@context":"https://schema.org"}</script>
+{"datePublished":"2021-02-26T00:00:00-06:00","headline":"Event-triggered Kubeflow Pipeline runs, and using TFDV to detect data drift","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html"},"description":"how to set up event-triggered Kubeflow Pipelines runs, and use TFDV to detect data drift","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/ml/kfp/mlops/tfdv/gcf/2021/02/26/kfp_tfdv_event_triggered.html","dateModified":"2021-02-26T00:00:00-06:00","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
 <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
@@ -154,7 +154,7 @@ window.onload = wrap_img;
 </ul><h2 id="introduction">
 <a class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
 
-<p>With ML workflows, it is often insufficient to train and deploy a given model just once.  Even if the model has desired accuracy initially, this can change if the data used for making prediction requests becomes— perhaps over time— sufficiently different from the data used to originally train the model.</p>
+<p>With ML workflows,  it is often insufficient to train and deploy a given model just once.  Even if the model has desired accuracy initially, this can change if the data used for making prediction requests becomes— perhaps over time— sufficiently different from the data used to originally train the model.</p>
 
 <p>When new data becomes available, which could be used for retraining a model, it can be helpful to apply techniques for analyzing <em>data ‘drift’</em>, and determining whether the drift is sufficiently anomalous to warrant retraining yet.
 It can also be useful to trigger such an analysis— and potential re-run of your training pipeline— <em>automatically</em>, upon arrival of new data.</p>
