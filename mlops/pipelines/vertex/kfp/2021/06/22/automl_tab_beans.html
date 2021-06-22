@@ -103,7 +103,7 @@ window.onload = wrap_img;
        • <span class="read-time" title="Estimated read time">
     
     
-      9 min read
+      10 min read
     
 </span></p>
 
@@ -143,13 +143,14 @@ window.onload = wrap_img;
 <li class="toc-entry toc-h2"><a href="#running-a-pipeline-job-on-vertex-pipelines">Running a pipeline job on Vertex Pipelines</a>
 <ul>
 <li class="toc-entry toc-h3"><a href="#leveraging-pipeline-step-caching-to-develop-and-debug">Leveraging Pipeline step caching to develop and debug</a></li>
+<li class="toc-entry toc-h3"><a href="#lineage-tracking">Lineage tracking</a></li>
 </ul>
 </li>
 <li class="toc-entry toc-h2"><a href="#whats-next">What’s next?</a></li>
 </ul><h2 id="introduction">
 <a class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
 
-<p>This post shows how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML, evaluating the accuracy of the trained model; and if the model is sufficiently accurate, deploy it to Vertex AI for serving.</p>
+<p>This post shows how you can use <a href="https://cloud.google.com/vertex-ai/docs/pipelines">Vertex Pipelines</a> to build an end-to-end ML workflow that trains a custom model using AutoML; evaluates the accuracy of the trained model; and if the model is sufficiently accurate, deploys it to Vertex AI for serving.</p>
 
 <h3 id="vertex-ai-and-vertex-pipelines">
 <a class="anchor" href="#vertex-ai-and-vertex-pipelines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Vertex AI and Vertex Pipelines</h3>
@@ -158,10 +159,9 @@ window.onload = wrap_img;
 
 <p><a href="https://cloud.google.com/vertex-ai/docs/pipelines">Vertex Pipelines</a> is part of <a href="https://cloud.google.com/vertex-ai/">Vertex AI.</a>  It helps you to automate, monitor, and govern your ML systems by orchestrating your ML workflows.  It is automated, scalable, serverless, and cost-effective: you pay only for what you use.  Vertex Pipelines is the backbone of the Vertex AI ML Ops story, and makes it easy to build and run  ML workflows using any ML framework.  Because it is serverless, and has seamless integration with GCP and Vertex AI tools and services, you can focus on just building and running your pipelines without worrying about infrastructure or cluster maintenance.</p>
 
-<p>Vertex Pipelines supports two OSS Python SDKs: TFX (<a href="https://www.tensorflow.org/tfx">TensorFlow Extended</a>) and KFP  (<a href="https://www.kubeflow.org/docs/components/pipelines/">Kubeflow Pipelines</a>).
-Vertex Pipelines automatically logs metadata for every artifact produced by a pipeline, supports step execution caching, and tracks artifacts, lineage, metrics, and execution across your ML workflows.  It provides support for enterprise security controls like <a href="https://cloud.google.com/iam">Cloud IAM</a>, <a href="https://cloud.google.com/vpc-service-controls">VPC-SC</a>, and <a href="https://cloud.google.com/kms/docs/cmek">CMEK</a>.</p>
+<p>Vertex Pipelines automatically logs metadata to track artifacts, lineage, metrics, and execution across your ML workflows, supports step execution caching, and provides support for enterprise security controls like <a href="https://cloud.google.com/iam">Cloud IAM</a>, <a href="https://cloud.google.com/vpc-service-controls">VPC-SC</a>, and <a href="https://cloud.google.com/kms/docs/cmek">CMEK</a>.</p>
 
-<p>The <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example Vertex pipeline</a> highlighted in this post uses the KFP SDK, and includes use of the <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>, which support easy access to Vertex AI services. Vertex Pipelines requires v2 of the KFP SDK.   Soon, it will be possible to use the <a href="https://www.kubeflow.org/docs/components/pipelines/sdk/v2/v2-compatibility/#current-caveats">KFP v2 ‘compatibility mode’</a> to run KFP V2 examples like this on OSS KFP as well.</p>
+<p>Vertex Pipelines supports two OSS Python SDKs: TFX (<a href="https://www.tensorflow.org/tfx">TensorFlow Extended</a>) and KFP  (<a href="https://www.kubeflow.org/docs/components/pipelines/">Kubeflow Pipelines</a>).  The <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example Vertex pipeline</a> highlighted in this post uses the KFP SDK, and includes use of the <strong><a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a></strong>, which support easy access to Vertex AI services. Vertex Pipelines requires v2 of the KFP SDK.   Soon, it will be possible to use the <a href="https://www.kubeflow.org/docs/components/pipelines/sdk/v2/v2-compatibility/#current-caveats">KFP v2 ‘compatibility mode’</a> to run KFP V2 examples like this on OSS KFP as well.</p>
 
 <h2 id="an-end-to-end-automl-workflow-with-vertex-pipelines">
 <a class="anchor" href="#an-end-to-end-automl-workflow-with-vertex-pipelines" aria-hidden="true"><span class="octicon octicon-link"></span></a>An end-to-end AutoML Workflow with Vertex Pipelines</h2>
@@ -245,16 +245,15 @@ The next section goes into more detail about how this custom ‘eval metrics’ 
 <h2 id="defining-a-custom-component">
 <a class="anchor" href="#defining-a-custom-component" aria-hidden="true"><span class="octicon octicon-link"></span></a>Defining a custom component</h2>
 
-<p>Most of the steps in the pipeline above are drawn from pre-built components; building blocks that make it easy to construct an ML workflow.  But I’ve defined one custom component to parse the trained model’s evaluation metrics, render some metrics visualizations, and determine— based on given ‘threshold’ information— whether the model is good enough to be deployed.  This custom component is defined as a Python function with a <code class="highlighter-rouge">@component</code> decorator.  When this function is evaluated, it is compiled to a task ‘factory function’ that can be used in a pipeline specification.
-The KFP SDK makes it very straightforward to define new pipeline components in this way.</p>
+<p>Most of the steps in the pipeline above are drawn from pre-built components; building blocks that make it easy to construct an ML workflow.  But I’ve defined one custom component to parse the trained model’s evaluation metrics, render some metrics visualizations, and determine— based on given ‘threshold’ information— whether the model is good enough to be deployed.  This custom component is defined as a Python function with a <code class="highlighter-rouge">@kfp.v2.dsl.component</code> decorator.  When this function is evaluated, it is compiled to a task ‘factory function’ that can be used in a pipeline specification. The KFP SDK makes it very straightforward to define new pipeline components in this way.</p>
 
 <p>Below is the custom component definition, with some detail elided.  The <code class="highlighter-rouge">@component</code> decorator specifies three optional args: the base container image to use; any packages to install; and the <code class="highlighter-rouge">yaml</code> file to which to write the component specification.</p>
 
-<p>The component function, <code class="highlighter-rouge">classif_model_eval_metrics</code>, has some input args of note.  <code class="highlighter-rouge">model</code> expects an input <code class="highlighter-rouge">Model</code> artifact.  As you may remember from the pipeline specification above, this input will be provided by an output of the training step.</p>
+<p>The component function, <code class="highlighter-rouge">classif_model_eval_metrics</code>, has some input parameters of note.  The <code class="highlighter-rouge">model</code> parameter is an input <code class="highlighter-rouge">kfp.v2.dsl.Model</code> artifact.  As you may remember from the pipeline specification above, here this input will be provided by an output of the training step.</p>
 
-<p>The last two function args, <code class="highlighter-rouge">metrics</code> and <code class="highlighter-rouge">metricsc</code> , are component <code class="highlighter-rouge">Output</code>s, in this case of type <code class="highlighter-rouge">Metrics</code> and <code class="highlighter-rouge">ClassificationMetrics</code>.  They’re not explicitly passed as inputs to a Pipelines step created from this component, but rather are automatically instantiated.  E.g., in the function below, we’re calling <code class="highlighter-rouge">metricsc.log_roc_curve(fpr, tpr, thresholds)</code>  to plot an ROC curve that will be displayed in the Pipelines UI.  These <code class="highlighter-rouge">Output</code> params become component outputs when the component is compiled, and can be consumed by other pipeline steps.</p>
+<p>The last two function args, <code class="highlighter-rouge">metrics</code> and <code class="highlighter-rouge">metricsc</code> , are component <code class="highlighter-rouge">Output</code>s, in this case of type <code class="highlighter-rouge">Metrics</code> and <code class="highlighter-rouge">ClassificationMetrics</code>.  They’re not explicitly passed as inputs to the component step, but rather are automatically instantiated and can be used in the component. E.g, in the function below, we’re calling <code class="highlighter-rouge">metricsc.log_roc_curve()</code> and <code class="highlighter-rouge">metricsc.log_confusion_matrix()</code> to render these visualizations in the Pipelines UI.  These <code class="highlighter-rouge">Output</code> params become component outputs when the component is compiled, and can be consumed by other pipeline steps.</p>
 
-<p>The <code class="highlighter-rouge">NamedTuple</code> outputs indicates another type of component output.  Here we’re returning a string that indicates whether or not to deploy the model.</p>
+<p>The <code class="highlighter-rouge">NamedTuple</code> outputs are another type of component output.  Here we’re returning a string that indicates whether or not to deploy the model.</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">component</span><span class="p">(</span>
     <span class="n">base_image</span><span class="o">=</span><span class="s">"gcr.io/deeplearning-platform-release/tf2-cpu.2-3:latest"</span><span class="p">,</span>
@@ -331,6 +330,8 @@ The KFP SDK makes it very straightforward to define new pipeline components in t
 <span class="p">)</span>
 </code></pre></div></div>
 
+<p>The example notebook has the full component definition.</p>
+
 <h3 id="sharing-component-specifications">
 <a class="anchor" href="#sharing-component-specifications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sharing component specifications</h3>
 
@@ -346,7 +347,7 @@ The <code class="highlighter-rouge">yaml</code> format allows the pipeline speci
 The <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example notebook</a> shows the details of how to do this.</p>
 
 <p>Once a pipeline is running, you can view its details in the Cloud Console, including the pipeline run and lineage graphs shown above, as well as pipeline step logs and pipeline Artifact details.
-You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to to clone pipeline runs.</p>
+You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to clone pipeline runs.</p>
 
 <h3 id="leveraging-pipeline-step-caching-to-develop-and-debug">
 <a class="anchor" href="#leveraging-pipeline-step-caching-to-develop-and-debug" aria-hidden="true"><span class="octicon octicon-link"></span></a>Leveraging Pipeline step caching to develop and debug</h3>
@@ -367,6 +368,17 @@ You can also submit pipeline job specs via the Cloud Console UI, and the UI make
 <blockquote>
   <p>Note: Step caching is on by default, but if you want to disable it, you can pass the <code class="highlighter-rouge">enable_caching=False</code> arg to the <code class="highlighter-rouge">create_run_from_job_spec</code> function when you submit a pipeline run.</p>
 </blockquote>
+
+<h3 id="lineage-tracking">
+<a class="anchor" href="#lineage-tracking" aria-hidden="true"><span class="octicon octicon-link"></span></a>Lineage tracking</h3>
+
+<p>If you click on an Artifact in a pipeline graph, you’ll see a “VIEW LINEAGE” button.  This tracks how the artifacts are connected by step executions. So it’s kind of the inverse of the pipeline DAG, and can include multiple executions that consumed the same artifact (this can happen with cache hits, for example).
+The tracking information shown is not necessarily  just for a single pipeline run, but for any pipeline execution that has used the given artifact.</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/mp/beans_lineage_tracker.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/mp/beans_lineage_tracker.png" width="60%"></a>
+<figcaption><br><i>Lineage tracking.</i></figcaption>
+</figure>
 
 <h2 id="whats-next">
 <a class="anchor" href="#whats-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>What’s next?</h2>
