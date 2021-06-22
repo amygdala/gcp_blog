@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Use Vertex Pipelines to build an AutoML Classification end-to-end workflow | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Use Vertex Pipelines to build an AutoML Classification end-to-end workflow" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML" />
+<meta property="og:description" content="how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-06-22T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html","headline":"Use Vertex Pipelines to build an AutoML Classification end-to-end workflow","dateModified":"2021-06-22T00:00:00-05:00","datePublished":"2021-06-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/gcp_blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+<link rel="shortcut icon" type="image/x-icon" href="/gcp_blog/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Use Vertex Pipelines to build an AutoML Classification end-to-end workflow | Amy on GCP</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Use Vertex Pipelines to build an AutoML Classification end-to-end workflow" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML" />
+<meta property="og:description" content="how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML" />
+<link rel="canonical" href="https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html" />
+<meta property="og:url" content="https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html" />
+<meta property="og:site_name" content="Amy on GCP" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-06-22T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML","@type":"BlogPosting","url":"https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html","headline":"Use Vertex Pipelines to build an AutoML Classification end-to-end workflow","dateModified":"2021-06-22T00:00:00-05:00","datePublished":"2021-06-22T00:00:00-05:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://amygdala.github.io/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
+<link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css"><link type="application/atom+xml" rel="alternate" href="https://amygdala.github.io/gcp_blog/feed.xml" title="Amy on GCP" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-164080601-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head><body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/gcp_blog/">Amy on GCP</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/gcp_blog/about/">About Me</a><a class="page-link" href="/gcp_blog/search/">Search</a><a class="page-link" href="/gcp_blog/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Use Vertex Pipelines to build an AutoML Classification end-to-end workflow</h1><p class="page-description">how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2021-06-22T00:00:00-05:00" itemprop="datePublished">
+        Jun 22, 2021
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      9 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i>
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#mlops">mlops</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#pipelines">pipelines</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#vertex">vertex</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/gcp_blog/categories/#kfp">kfp</a>
+        
+      
+      </p>
+    
+
+    </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#introduction">Introduction</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#vertex-ai-and-vertex-pipelines">Vertex AI and Vertex Pipelines</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#an-end-to-end-automl-workflow-with-vertex-pipelines">An end-to-end AutoML Workflow with Vertex Pipelines</a></li>
+<li class="toc-entry toc-h2"><a href="#defining-a-custom-component">Defining a custom component</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#sharing-component-specifications">Sharing component specifications</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#running-a-pipeline-job-on-vertex-pipelines">Running a pipeline job on Vertex Pipelines</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#leveraging-pipeline-step-caching-to-develop-and-debug">Leveraging Pipeline step caching to develop and debug</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#whats-next">What’s next?</a></li>
+</ul><h2 id="introduction">
+<a class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>This post shows how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML, evaluating the accuracy of the trained model; and if the model is sufficiently accurate, deploy it to Vertex AI for serving.</p>
+
+<h3 id="vertex-ai-and-vertex-pipelines">
+<a class="anchor" href="#vertex-ai-and-vertex-pipelines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Vertex AI and Vertex Pipelines</h3>
+
+<p>The recently-launched <a href="https://cloud.google.com/vertex-ai/">Vertex AI</a>  is a unified MLOps platform to help data scientists and ML engineers increase their rate of experimentation, deploy models faster, and manage models more effectively.  It brings AutoML and AI Platform together, in conjunction with some new MLOps-focused products, into a unified API, client library, and user interface.</p>
+
+<p><a href="https://cloud.google.com/vertex-ai/docs/pipelines">Vertex Pipelines</a> is part of <a href="https://cloud.google.com/vertex-ai/">Vertex AI.</a>  It helps you to automate, monitor, and govern your ML systems by orchestrating your ML workflows.  It is automated, scalable, serverless, and cost-effective: you pay only for what you use.  Vertex Pipelines is the backbone of the Vertex AI ML Ops story, and makes it easy to build and run  ML workflows using any ML framework.  Because it is serverless, and has seamless integration with GCP and Vertex AI tools and services, you can focus on just building and running your pipelines without worrying about infrastructure or cluster maintenance.</p>
+
+<p>Vertex Pipelines supports two OSS Python SDKs: TFX (<a href="https://www.tensorflow.org/tfx">TensorFlow Extended</a>) and KFP  (<a href="https://www.kubeflow.org/docs/components/pipelines/">Kubeflow Pipelines</a>).
+Vertex Pipelines automatically logs metadata for every artifact produced by a pipeline, supports step execution caching, and tracks artifacts, lineage, metrics, and execution across your ML workflows.  It provides support for enterprise security controls like <a href="https://cloud.google.com/iam">Cloud IAM</a>, <a href="https://cloud.google.com/vpc-service-controls">VPC-SC</a>, and <a href="https://cloud.google.com/kms/docs/cmek">CMEK</a>.</p>
+
+<p>The <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example Vertex pipeline</a> highlighted in this post uses the KFP SDK, and includes use of the <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>, which support easy access to Vertex AI services. Vertex Pipelines requires v2 of the KFP SDK.   Soon, it will be possible to use the <a href="https://www.kubeflow.org/docs/components/pipelines/sdk/v2/v2-compatibility/#current-caveats">KFP v2 ‘compatibility mode’</a> to run KFP V2 examples like this on OSS KFP as well.</p>
+
+<h2 id="an-end-to-end-automl-workflow-with-vertex-pipelines">
+<a class="anchor" href="#an-end-to-end-automl-workflow-with-vertex-pipelines" aria-hidden="true"><span class="octicon octicon-link"></span></a>An end-to-end AutoML Workflow with Vertex Pipelines</h2>
+
+<p><a href="https://cloud.google.com/vertex-ai/docs/start/automl-model-types#tabular">Vertex AI’s AutoML Tabular service</a> lets you bring your own structured data to train a model, without needing to build the model architecture yourself. For this example, I’ll use the UCI Machine Learning ‘Dry beans dataset’<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>.  The task is a classification task: predict the type of a bean given some information about its characteristics.</p>
+
+<p>Vertex Pipelines makes it very straightforward to construct a workflow to support building, evaluating, and deploying such models.   We’ll build a pipeline that looks like this:</p>
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/mp/beans.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/mp/beans.png" width="95%"></a>
+<figcaption><br><i>The DAG for the AutoML classification workflow.</i></figcaption>
+</figure>
+
+<p>You can see that the model deployment step is wrapped by a conditional: the model will only be deployed if the evaluation step indicates that it is sufficiently accurate.</p>
+
+<p>For this example, nearly all the <em>components</em> (steps) in the pipeline are prebuilt <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>.  This means that we (mostly) just need to specify how the pipeline is put together using pre-existing building blocks.
+However, I’ll add one Python function-based <em>custom component</em> for model evaluation and metrics visualization.
+The pipeline definition looks as follows (with a bit of detail elided):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">kfp</span><span class="o">.</span><span class="n">dsl</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">"automl-tab-beans-training-v2"</span><span class="p">,</span> <span class="n">pipeline_root</span><span class="o">=</span><span class="n">PIPELINE_ROOT</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span>
+    <span class="n">bq_source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">"bq://aju-dev-demos.beans.beans1"</span><span class="p">,</span>
+    <span class="n">display_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DISPLAY_NAME</span><span class="p">,</span>
+    <span class="n">project</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">PROJECT_ID</span><span class="p">,</span>
+    <span class="n">gcp_region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">"us-central1"</span><span class="p">,</span>
+    <span class="n">api_endpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">"us-central1-aiplatform.googleapis.com"</span><span class="p">,</span>
+    <span class="n">thresholds_dict_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">'{"auRoc": 0.95}'</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">dataset_create_op</span> <span class="o">=</span> <span class="n">gcc_aip</span><span class="o">.</span><span class="n">TabularDatasetCreateOp</span><span class="p">(</span>
+        <span class="n">project</span><span class="o">=</span><span class="n">project</span><span class="p">,</span> <span class="n">display_name</span><span class="o">=</span><span class="n">display_name</span><span class="p">,</span> <span class="n">bq_source</span><span class="o">=</span><span class="n">bq_source</span>
+    <span class="p">)</span>
+
+    <span class="n">training_op</span> <span class="o">=</span> <span class="n">gcc_aip</span><span class="o">.</span><span class="n">AutoMLTabularTrainingJobRunOp</span><span class="p">(</span>
+        <span class="n">project</span><span class="o">=</span><span class="n">project</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="n">display_name</span><span class="p">,</span>
+        <span class="n">optimization_prediction_type</span><span class="o">=</span><span class="s">"classification"</span><span class="p">,</span>
+        <span class="n">optimization_objective</span><span class="o">=</span><span class="s">"minimize-log-loss"</span><span class="p">,</span>
+        <span class="n">budget_milli_node_hours</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">column_transformations</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span><span class="s">"numeric"</span><span class="p">:</span> <span class="p">{</span><span class="s">"column_name"</span><span class="p">:</span> <span class="s">"Area"</span><span class="p">}},</span>
+            <span class="p">{</span><span class="s">"numeric"</span><span class="p">:</span> <span class="p">{</span><span class="s">"column_name"</span><span class="p">:</span> <span class="s">"Perimeter"</span><span class="p">}},</span>
+            <span class="p">{</span><span class="s">"numeric"</span><span class="p">:</span> <span class="p">{</span><span class="s">"column_name"</span><span class="p">:</span> <span class="s">"MajorAxisLength"</span><span class="p">}},</span>
+            <span class="o">...</span> <span class="n">other</span> <span class="n">columns</span> <span class="o">...</span>
+            <span class="p">{</span><span class="s">"categorical"</span><span class="p">:</span> <span class="p">{</span><span class="s">"column_name"</span><span class="p">:</span> <span class="s">"Class"</span><span class="p">}},</span>
+        <span class="p">],</span>
+        <span class="n">dataset</span><span class="o">=</span><span class="n">dataset_create_op</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">"dataset"</span><span class="p">],</span>
+        <span class="n">target_column</span><span class="o">=</span><span class="s">"Class"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">model_eval_task</span> <span class="o">=</span> <span class="n">classif_model_eval_metrics</span><span class="p">(</span>
+        <span class="n">project</span><span class="p">,</span>
+        <span class="n">gcp_region</span><span class="p">,</span>
+        <span class="n">api_endpoint</span><span class="p">,</span>
+        <span class="n">thresholds_dict_str</span><span class="p">,</span>
+        <span class="n">training_op</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">"model"</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span>
+        <span class="n">model_eval_task</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">"dep_decision"</span><span class="p">]</span> <span class="o">==</span> <span class="s">"true"</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">"deploy_decision"</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="n">deploy_op</span> <span class="o">=</span> <span class="n">gcc_aip</span><span class="o">.</span><span class="n">ModelDeployOp</span><span class="p">(</span>  <span class="c1"># noqa: F841
+</span>            <span class="n">model</span><span class="o">=</span><span class="n">training_op</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">"model"</span><span class="p">],</span>
+            <span class="n">project</span><span class="o">=</span><span class="n">project</span><span class="p">,</span>
+            <span class="n">machine_type</span><span class="o">=</span><span class="s">"n1-standard-4"</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div></div>
+
+<p>We first create a <a href="https://cloud.google.com/vertex-ai/docs/datasets/create-dataset-console"><em>Dataset</em></a> from a BigQuery table that holds the training data. Then, we use AutoML to train a tabular classification model.  The <code class="highlighter-rouge">dataset</code> arg to the training step gets its value from the output of the Dataset step (<code class="highlighter-rouge">dataset=dataset_create_op.outputs["dataset"]</code>).</p>
+
+<p>After the model is trained, its evaluation metrics are checked against given ‘threshold’ information, to decide whether it’s accurate enough to deploy.
+The next section goes into more detail about how this custom ‘eval metrics’ component is defined.  It takes as one of its inputs an output of the training step (<code class="highlighter-rouge">training_op.outputs["model"]</code>)— which points to the trained model.</p>
+
+<p>Then, a KFP <em>conditional</em> uses an output of the eval step to decide whether to proceed with the deployment:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">with</span> <span class="n">dsl</span><span class="o">.</span><span class="n">Condition</span><span class="p">(</span>
+        <span class="n">model_eval_task</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">"dep_decision"</span><span class="p">]</span> <span class="o">==</span> <span class="s">"true"</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">"deploy_decision"</span><span class="p">,</span>
+    <span class="p">):</span>
+</code></pre></div></div>
+<p>If the model is sufficiently accurate, the prebuilt deployment component is called.  This step creates an <a href="https://cloud.google.com/vertex-ai/docs/general/deployment"><em>Endpoint</em></a> and deploys the trained model to that endpoint for serving.</p>
+
+<h2 id="defining-a-custom-component">
+<a class="anchor" href="#defining-a-custom-component" aria-hidden="true"><span class="octicon octicon-link"></span></a>Defining a custom component</h2>
+
+<p>Most of the steps in the pipeline above are drawn from pre-built components; building blocks that make it easy to construct an ML workflow.  But I’ve defined one custom component to parse the trained model’s evaluation metrics, render some metrics visualizations, and determine— based on given ‘threshold’ information— whether the model is good enough to be deployed.  This custom component is defined as a Python function with a <code class="highlighter-rouge">@component</code> decorator.  When this function is evaluated, it is compiled to a task ‘factory function’ that can be used in a pipeline specification.
+The KFP SDK makes it very straightforward to define new pipeline components in this way.</p>
+
+<p>Below is the custom component definition, with some detail elided.  The <code class="highlighter-rouge">@component</code> decorator specifies three optional args: the base container image to use; any packages to install; and the <code class="highlighter-rouge">yaml</code> file to which to write the component specification.</p>
+
+<p>The component function, <code class="highlighter-rouge">classif_model_eval_metrics</code>, has some input args of note.  <code class="highlighter-rouge">model</code> expects an input <code class="highlighter-rouge">Model</code> artifact.  As you may remember from the pipeline specification above, this input will be provided by an output of the training step.</p>
+
+<p>The last two function args, <code class="highlighter-rouge">metrics</code> and <code class="highlighter-rouge">metricsc</code> , are component <code class="highlighter-rouge">Output</code>s, in this case of type <code class="highlighter-rouge">Metrics</code> and <code class="highlighter-rouge">ClassificationMetrics</code>.  They’re not explicitly passed as inputs to a Pipelines step created from this component, but rather are automatically instantiated.  E.g., in the function below, we’re calling <code class="highlighter-rouge">metricsc.log_roc_curve(fpr, tpr, thresholds)</code>  to plot an ROC curve that will be displayed in the Pipelines UI.  These <code class="highlighter-rouge">Output</code> params become component outputs when the component is compiled, and can be consumed by other pipeline steps.</p>
+
+<p>The <code class="highlighter-rouge">NamedTuple</code> outputs indicates another type of component output.  Here we’re returning a string that indicates whether or not to deploy the model.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">component</span><span class="p">(</span>
+    <span class="n">base_image</span><span class="o">=</span><span class="s">"gcr.io/deeplearning-platform-release/tf2-cpu.2-3:latest"</span><span class="p">,</span>
+    <span class="n">output_component_file</span><span class="o">=</span><span class="s">"tables_eval_component.yaml"</span><span class="p">,</span>
+    <span class="n">packages_to_install</span><span class="o">=</span><span class="p">[</span><span class="s">"google-cloud-aiplatform"</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">classif_model_eval_metrics</span><span class="p">(</span>
+    <span class="n">project</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>  <span class="c1"># "us-central1",
+</span>    <span class="n">api_endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>  <span class="c1"># "us-central1-aiplatform.googleapis.com",
+</span>    <span class="n">thresholds_dict_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Input</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="n">Output</span><span class="p">[</span><span class="n">Metrics</span><span class="p">],</span>
+    <span class="n">metricsc</span><span class="p">:</span> <span class="n">Output</span><span class="p">[</span><span class="n">ClassificationMetrics</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NamedTuple</span><span class="p">(</span><span class="s">"Outputs"</span><span class="p">,</span> <span class="p">[(</span><span class="s">"dep_decision"</span><span class="p">,</span> <span class="nb">str</span><span class="p">)]):</span>  <span class="c1"># Return parameter.
+</span>
+    <span class="kn">import</span> <span class="nn">json</span>
+    <span class="kn">import</span> <span class="nn">logging</span>
+
+    <span class="kn">from</span> <span class="nn">google.cloud</span> <span class="kn">import</span> <span class="n">aiplatform</span>
+
+    <span class="c1"># Function to fetch model eval info
+</span>    <span class="k">def</span> <span class="nf">get_eval_info</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">model_name</span><span class="p">):</span>
+        <span class="o">...</span>
+
+    <span class="c1"># Use the given metrics threshold(s) to determine whether the model is
+</span>    <span class="c1"># accurate enough to deploy.
+</span>    <span class="k">def</span> <span class="nf">classification_thresholds_check</span><span class="p">(</span><span class="n">metrics_dict</span><span class="p">,</span> <span class="n">thresholds_dict</span><span class="p">):</span>
+        <span class="o">...</span>
+
+    <span class="c1"># Generate pipeline annotations and visualizations for the metrics info
+</span>    <span class="k">def</span> <span class="nf">log_metrics</span><span class="p">(</span><span class="n">metrics_list</span><span class="p">,</span> <span class="n">metricsc</span><span class="p">):</span>
+		<span class="o">...</span>
+        <span class="n">metricsc</span><span class="o">.</span><span class="n">log_roc_curve</span><span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">thresholds</span><span class="p">)</span>
+        <span class="o">...</span>
+        <span class="n">metricsc</span><span class="o">.</span><span class="n">log_confusion_matrix</span><span class="p">(</span>
+            <span class="n">annotations</span><span class="p">,</span>
+            <span class="n">test_confusion_matrix</span><span class="p">[</span><span class="s">"rows"</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="n">aiplatform</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">project</span><span class="p">)</span>
+    <span class="c1"># extract the model resource name from the input Model Artifact
+</span>    <span class="n">model_resource_path</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">uri</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">"aiplatform://v1/"</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">"model path: </span><span class="si">%</span><span class="s">s"</span><span class="p">,</span> <span class="n">model_resource_path</span><span class="p">)</span>
+
+    <span class="n">client_options</span> <span class="o">=</span> <span class="p">{</span><span class="s">"api_endpoint"</span><span class="p">:</span> <span class="n">api_endpoint</span><span class="p">}</span>
+    <span class="c1"># Initialize client that will be used to create and send requests to Vertex AI.
+</span>    <span class="n">client</span> <span class="o">=</span> <span class="n">aiplatform</span><span class="o">.</span><span class="n">gapic</span><span class="o">.</span><span class="n">ModelServiceClient</span><span class="p">(</span><span class="n">client_options</span><span class="o">=</span><span class="n">client_options</span><span class="p">)</span>
+    <span class="n">eval_name</span><span class="p">,</span> <span class="n">metrics_list</span><span class="p">,</span> <span class="n">metrics_str_list</span> <span class="o">=</span> <span class="n">get_eval_info</span><span class="p">(</span>
+        <span class="n">client</span><span class="p">,</span> <span class="n">model_resource_path</span>
+    <span class="p">)</span>
+
+    <span class="n">log_metrics</span><span class="p">(</span><span class="n">metrics_list</span><span class="p">,</span> <span class="n">metricsc</span><span class="p">)</span>
+
+    <span class="n">thresholds_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">thresholds_dict_str</span><span class="p">)</span>
+    <span class="n">deploy</span> <span class="o">=</span> <span class="n">classification_thresholds_check</span><span class="p">(</span><span class="n">metrics_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">thresholds_dict</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">deploy</span><span class="p">:</span>
+        <span class="n">dep_decision</span> <span class="o">=</span> <span class="s">"true"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dep_decision</span> <span class="o">=</span> <span class="s">"false"</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">"deployment decision is </span><span class="si">%</span><span class="s">s"</span><span class="p">,</span> <span class="n">dep_decision</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">dep_decision</span><span class="p">,)</span>
+</code></pre></div></div>
+
+<p>When this function is evaluated, we can use the generated factory function to define a pipeline step as part of a pipeline definition, as we saw in the previous section:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model_eval_task</span> <span class="o">=</span> <span class="n">classif_model_eval_metrics</span><span class="p">(</span>
+    <span class="n">project</span><span class="p">,</span>
+    <span class="n">gcp_region</span><span class="p">,</span>
+    <span class="n">api_endpoint</span><span class="p">,</span>
+    <span class="n">thresholds_dict_str</span><span class="p">,</span>
+    <span class="n">training_op</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s">"model"</span><span class="p">],</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="sharing-component-specifications">
+<a class="anchor" href="#sharing-component-specifications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sharing component specifications</h3>
+
+<p>When the component is compiled, we can also indicate that a <code class="highlighter-rouge">yaml</code> component specification be generated.  We did this via the optional  <code class="highlighter-rouge">output_component_file="tables_eval_component.yaml"</code> arg passed to the <code class="highlighter-rouge">@component</code> decorator.
+The <code class="highlighter-rouge">yaml</code> format allows the pipeline specification to be put under version control and shared with others.</p>
+
+<p>Then, the component can be used in other pipelines by calling the <a href="https://www.kubeflow.org/docs/components/pipelines/sdk/component-development/#using-your-component-in-a-pipeline"><code class="highlighter-rouge">kfp.components.load_component_from_url</code> function</a> (and other variants like <code class="highlighter-rouge">load_component_from_file</code>).</p>
+
+<h2 id="running-a-pipeline-job-on-vertex-pipelines">
+<a class="anchor" href="#running-a-pipeline-job-on-vertex-pipelines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running a pipeline job on Vertex Pipelines</h2>
+
+<p>Once a pipeline is defined, the next step is to <em>compile</em> it — which generates a json job spec file— then submit and run it on Vertex Pipelines.  When you submit a pipeline job, you can specify values for pipeline input parameters, overriding their defaults.
+The <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example notebook</a> shows the details of how to do this.</p>
+
+<p>Once a pipeline is running, you can view its details in the Cloud Console, including the pipeline run and lineage graphs shown above, as well as pipeline step logs and pipeline Artifact details.
+You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to to clone pipeline runs.</p>
+
+<h3 id="leveraging-pipeline-step-caching-to-develop-and-debug">
+<a class="anchor" href="#leveraging-pipeline-step-caching-to-develop-and-debug" aria-hidden="true"><span class="octicon octicon-link"></span></a>Leveraging Pipeline step caching to develop and debug</h3>
+
+<p>Vertex Pipelines supports step caching, and this helps with iterating on pipeline development— when you rerun a pipeline, if a component’s inputs have not changed, its cached execution results can be reused. If you run this pipeline more than once, you might notice this feature in action.</p>
+
+<p>If you’re playing along, try making a small change to the <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example notebook</a> cell that holds the custom component definition (the <code class="highlighter-rouge">classif_model_eval_metrics</code> function in the “Define a metrics eval custom component” section) by uncommenting this line:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># metrics.metadata["model_type"] = "AutoML Tabular classification"
+</span></code></pre></div></div>
+
+<p>Then re-compile the component, recompile the pipeline <strong>without changing the <code class="highlighter-rouge">DISPLAY_NAME</code> value</strong>, and run it again. When you do so, you should see that Vertex Pipelines can leverage the cached executions for the upstream steps— as their inputs didn’t change— and only needs to re-execute from the changed component.  The pipeline DAG for the new run should look as follows, with the ‘recycle’ icon on some of the steps indicating that their cached executions were used.</p>
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/mp/beans_cached.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/mp/beans_cached.png" width="60%"></a>
+<figcaption><br><i>Leveraging step caching with the AutoML classification workflow.</i></figcaption>
+</figure>
+
+<blockquote>
+  <p>Note: Step caching is on by default, but if you want to disable it, you can pass the <code class="highlighter-rouge">enable_caching=False</code> arg to the <code class="highlighter-rouge">create_run_from_job_spec</code> function when you submit a pipeline run.</p>
+</blockquote>
+
+<h2 id="whats-next">
+<a class="anchor" href="#whats-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>What’s next?</h2>
+
+<p>This post introduced Vertex Pipelines, and the prebuilt <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>, which allow easy access to Vertex AI services.   The Pipelines example in this post uses the AutoML Tabular service, showing how straightforward it is to bring your own data to train a model. It showed a pipeline that creates a Dataset, trains a model using that dataset, obtains the model’s evaluation metrics, and decides whether or not to deploy the model to Vertex AI for serving.</p>
+
+<p>For next steps, check out <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/tree/master/ai-platform-unified/notebooks/official/pipelines">other Vertex Pipelines example notebooks</a> as well as a <a href="https://codelabs.developers.google.com/vertex-pipelines-intro?hl=en&amp;continue=https%3A%2F%2Fcodelabs.developers.google.com%2F%3Fcat%3Dcloud#0">codelab</a> based in part on the pipeline in this post.
+You  can also find other Vertex AI notebook examples <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/tree/master/ai-platform-unified/notebooks/official">here</a> and <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/tree/master/ai-platform-unified/notebooks/unofficial">here</a>.</p>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>from: KOKLU, M. and OZKAN, I.A., (2020) “Multiclass Classification of Dry Beans Using Computer Vision and Machine Learning Techniques.”In Computers and Electronics in Agriculture, 174, 105507. <a href="https://doi.org/10.1016/j.compag.2020.105507">DOI</a> <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+  </div><a class="u-url" href="/gcp_blog/mlops/pipelines/vertex/kfp/2021/06/22/automl_tab_beans.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/gcp_blog/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/gcp_blog/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/gcp_blog/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Using Google Cloud Platform</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/amygdala" title="amygdala"><svg class="svg-icon grey"><use xlink:href="/gcp_blog/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
