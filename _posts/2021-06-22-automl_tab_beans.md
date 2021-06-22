@@ -9,7 +9,8 @@ title: Use Vertex Pipelines to build an AutoML Classification end-to-end workflo
 
 ## Introduction
 
-This post shows how you can use Vertex Pipelines to build an end-to-end ML workflow for training a custom model using AutoML, evaluating the accuracy of the trained model; and if the model is sufficiently accurate, deploy it to Vertex AI for serving.
+This post shows how you can use [Vertex Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines) to build an end-to-end ML workflow that trains a custom model using AutoML; evaluates the accuracy of the trained model; and if the model is sufficiently accurate, deploys it to Vertex AI for serving.
+
 
 ### Vertex AI and Vertex Pipelines
 
@@ -17,10 +18,9 @@ The recently-launched [Vertex AI][1]  is a unified MLOps platform to help data s
 
 [Vertex Pipelines][2] is part of [Vertex AI.][3]  It helps you to automate, monitor, and govern your ML systems by orchestrating your ML workflows.  It is automated, scalable, serverless, and cost-effective: you pay only for what you use.  Vertex Pipelines is the backbone of the Vertex AI ML Ops story, and makes it easy to build and run  ML workflows using any ML framework.  Because it is serverless, and has seamless integration with GCP and Vertex AI tools and services, you can focus on just building and running your pipelines without worrying about infrastructure or cluster maintenance.
 
-Vertex Pipelines supports two OSS Python SDKs: TFX ([TensorFlow Extended][4]) and KFP  ([Kubeflow Pipelines][5]).
-Vertex Pipelines automatically logs metadata for every artifact produced by a pipeline, supports step execution caching, and tracks artifacts, lineage, metrics, and execution across your ML workflows.  It provides support for enterprise security controls like [Cloud IAM][6], [VPC-SC][7], and [CMEK][8].
+Vertex Pipelines automatically logs metadata to track artifacts, lineage, metrics, and execution across your ML workflows, supports step execution caching, and provides support for enterprise security controls like [Cloud IAM][6], [VPC-SC][7], and [CMEK][8].
 
-The [example Vertex pipeline][9] highlighted in this post uses the KFP SDK, and includes use of the [Google Cloud Pipeline Components][10], which support easy access to Vertex AI services. Vertex Pipelines requires v2 of the KFP SDK.   Soon, it will be possible to use the [KFP v2 ‘compatibility mode’][11] to run KFP V2 examples like this on OSS KFP as well.
+Vertex Pipelines supports two OSS Python SDKs: TFX ([TensorFlow Extended][4]) and KFP  ([Kubeflow Pipelines][5]).  The [example Vertex pipeline][9] highlighted in this post uses the KFP SDK, and includes use of the **[Google Cloud Pipeline Components][10]**, which support easy access to Vertex AI services. Vertex Pipelines requires v2 of the KFP SDK.   Soon, it will be possible to use the [KFP v2 ‘compatibility mode’][11] to run KFP V2 examples like this on OSS KFP as well.
 
 ## An end-to-end AutoML Workflow with Vertex Pipelines
 
@@ -104,16 +104,15 @@ If the model is sufficiently accurate, the prebuilt deployment component is call
 
 ## Defining a custom component
 
-Most of the steps in the pipeline above are drawn from pre-built components; building blocks that make it easy to construct an ML workflow.  But I’ve defined one custom component to parse the trained model’s evaluation metrics, render some metrics visualizations, and determine— based on given ‘threshold’ information— whether the model is good enough to be deployed.  This custom component is defined as a Python function with a `@component` decorator.  When this function is evaluated, it is compiled to a task ‘factory function’ that can be used in a pipeline specification.
-The KFP SDK makes it very straightforward to define new pipeline components in this way.
+Most of the steps in the pipeline above are drawn from pre-built components; building blocks that make it easy to construct an ML workflow.  But I’ve defined one custom component to parse the trained model’s evaluation metrics, render some metrics visualizations, and determine— based on given ‘threshold’ information— whether the model is good enough to be deployed.  This custom component is defined as a Python function with a `@kfp.v2.dsl.component` decorator.  When this function is evaluated, it is compiled to a task ‘factory function’ that can be used in a pipeline specification. The KFP SDK makes it very straightforward to define new pipeline components in this way.
 
 Below is the custom component definition, with some detail elided.  The `@component` decorator specifies three optional args: the base container image to use; any packages to install; and the `yaml` file to which to write the component specification.
 
-The component function, `classif_model_eval_metrics`, has some input args of note.  `model` expects an input `Model` artifact.  As you may remember from the pipeline specification above, this input will be provided by an output of the training step.
+The component function, `classif_model_eval_metrics`, has some input parameters of note.  The `model` parameter is an input `kfp.v2.dsl.Model` artifact.  As you may remember from the pipeline specification above, here this input will be provided by an output of the training step.
 
-The last two function args, `metrics` and `metricsc` , are component `Output`s, in this case of type `Metrics` and `ClassificationMetrics`.  They’re not explicitly passed as inputs to a Pipelines step created from this component, but rather are automatically instantiated.  E.g., in the function below, we’re calling `metricsc.log_roc_curve(fpr, tpr, thresholds)`  to plot an ROC curve that will be displayed in the Pipelines UI.  These `Output` params become component outputs when the component is compiled, and can be consumed by other pipeline steps.
+The last two function args, `metrics` and `metricsc` , are component `Output`s, in this case of type `Metrics` and `ClassificationMetrics`.  They’re not explicitly passed as inputs to the component step, but rather are automatically instantiated and can be used in the component. E.g, in the function below, we’re calling `metricsc.log_roc_curve()` and `metricsc.log_confusion_matrix()` to render these visualizations in the Pipelines UI.  These `Output` params become component outputs when the component is compiled, and can be consumed by other pipeline steps.
 
-The `NamedTuple` outputs indicates another type of component output.  Here we’re returning a string that indicates whether or not to deploy the model.
+The `NamedTuple` outputs are another type of component output.  Here we’re returning a string that indicates whether or not to deploy the model.
 
 ```python
 @component(
@@ -192,6 +191,8 @@ model_eval_task = classif_model_eval_metrics(
 )
 ```
 
+The example notebook has the full component definition.
+
 ### Sharing component specifications
 
 When the component is compiled, we can also indicate that a `yaml` component specification be generated.  We did this via the optional  `output_component_file="tables_eval_component.yaml"` arg passed to the `@component` decorator.
@@ -205,7 +206,7 @@ Once a pipeline is defined, the next step is to _compile_ it — which generates
 The [example notebook][18] shows the details of how to do this.
 
 Once a pipeline is running, you can view its details in the Cloud Console, including the pipeline run and lineage graphs shown above, as well as pipeline step logs and pipeline Artifact details.
-You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to to clone pipeline runs.
+You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to clone pipeline runs.
 
 ### Leveraging Pipeline step caching to develop and debug
 
@@ -224,6 +225,17 @@ Then re-compile the component, recompile the pipeline **without changing the `DI
 </figure>
 
 > Note: Step caching is on by default, but if you want to disable it, you can pass the `enable_caching=False` arg to the `create_run_from_job_spec` function when you submit a pipeline run.
+
+### Lineage tracking
+
+If you click on an Artifact in a pipeline graph, you'll see a "VIEW LINEAGE" button.  This tracks how the artifacts are connected by step executions. So it’s kind of the inverse of the pipeline DAG, and can include multiple executions that consumed the same artifact (this can happen with cache hits, for example).
+The tracking information shown is not necessarily  just for a single pipeline run, but for any pipeline execution that has used the given artifact.
+
+
+<figure>
+<a href="https://storage.googleapis.com/amy-jo/images/mp/beans_lineage_tracker.png" target="_blank"><img src="https://storage.googleapis.com/amy-jo/images/mp/beans_lineage_tracker.png" width="60%"/></a>
+<figcaption><br/><i>Lineage tracking.</i></figcaption>
+</figure>
 
 ## What’s next?
 
