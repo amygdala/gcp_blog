@@ -39,7 +39,8 @@ However, I’ll add one Python function-based _custom component_ for model evalu
 The pipeline definition looks as follows (with a bit of detail elided):
 
 ```python
-@kfp.dsl.pipeline(name="automl-tab-beans-training-v2", pipeline_root=PIPELINE_ROOT)
+@kfp.dsl.pipeline(name="automl-tab-beans-training-v2",
+                  pipeline_root=PIPELINE_ROOT)
 def pipeline(
     bq_source: str = "bq://aju-dev-demos.beans.beans1",
     display_name: str = DISPLAY_NAME,
@@ -196,7 +197,7 @@ The example notebook has the full component definition.
 ### Sharing component specifications
 
 When the component is compiled, we can also indicate that a `yaml` component specification be generated.  We did this via the optional  `output_component_file="tables_eval_component.yaml"` arg passed to the `@component` decorator.
-The `yaml` format allows the pipeline specification to be put under version control and shared with others.
+The `yaml` format allows the component specification to be put under version control and shared with others.
 
 Then, the component can be used in other pipelines by calling the [`kfp.components.load_component_from_url` function][17] (and other variants like `load_component_from_file`).
 
@@ -206,7 +207,8 @@ Once a pipeline is defined, the next step is to _compile_ it — which generates
 The [example notebook][18] shows the details of how to do this.
 
 Once a pipeline is running, you can view its details in the Cloud Console, including the pipeline run and lineage graphs shown above, as well as pipeline step logs and pipeline Artifact details.
-You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to clone pipeline runs.
+You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to clone pipeline runs. The json pipeline specification file may also be put under version control and shared with others.
+
 
 ### Leveraging Pipeline step caching to develop and debug
 
