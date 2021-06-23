@@ -176,7 +176,7 @@ window.onload = wrap_img;
 
 <p>You can see that the model deployment step is wrapped by a conditional: the model will only be deployed if the evaluation step indicates that it is sufficiently accurate.</p>
 
-<p>For this example, nearly all the <em>components</em> (steps) in the pipeline are prebuilt <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>.  This means that we (mostly) just need to specify how the pipeline is put together using pre-existing building blocks.
+<p>For this <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example</a>, nearly all the <em>components</em> (steps) in the pipeline are prebuilt <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>.  This means that we (mostly) just need to specify how the pipeline is put together using pre-existing building blocks.
 However, I’ll add one Python function-based <em>custom component</em> for model evaluation and metrics visualization.
 The pipeline definition looks as follows (with a bit of detail elided):</p>
 
@@ -331,7 +331,7 @@ The next section goes into more detail about how this custom ‘eval metrics’ 
 <span class="p">)</span>
 </code></pre></div></div>
 
-<p>The example notebook has the full component definition.</p>
+<p>The <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example notebook</a> has the full component definition.</p>
 
 <h3 id="sharing-component-specifications">
 <a class="anchor" href="#sharing-component-specifications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sharing component specifications</h3>
@@ -384,7 +384,7 @@ The tracking information shown is not necessarily  just for a single pipeline ru
 <h2 id="whats-next">
 <a class="anchor" href="#whats-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>What’s next?</h2>
 
-<p>This post introduced Vertex Pipelines, and the prebuilt <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>, which allow easy access to Vertex AI services.   The Pipelines example in this post uses the AutoML Tabular service, showing how straightforward it is to bring your own data to train a model. It showed a pipeline that creates a Dataset, trains a model using that dataset, obtains the model’s evaluation metrics, and decides whether or not to deploy the model to Vertex AI for serving.</p>
+<p>This post introduced Vertex Pipelines, and the prebuilt <a href="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud">Google Cloud Pipeline Components</a>, which allow easy access to Vertex AI services.   The Pipelines <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example</a> in this post uses the AutoML Tabular service, showing how straightforward it is to bring your own data to train a model. It showed a pipeline that creates a Dataset, trains a model using that dataset, obtains the model’s evaluation metrics, and decides whether or not to deploy the model to Vertex AI for serving.</p>
 
 <p>For next steps, check out <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/tree/master/ai-platform-unified/notebooks/official/pipelines">other Vertex Pipelines example notebooks</a> as well as a <a href="https://codelabs.developers.google.com/vertex-pipelines-intro?hl=en&amp;continue=https%3A%2F%2Fcodelabs.developers.google.com%2F%3Fcat%3Dcloud#0">codelab</a> based in part on the pipeline in this post.
 You  can also find other Vertex AI notebook examples <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/tree/master/ai-platform-unified/notebooks/official">here</a> and <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/tree/master/ai-platform-unified/notebooks/unofficial">here</a>.</p>
