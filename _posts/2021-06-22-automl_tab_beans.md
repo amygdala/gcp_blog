@@ -34,7 +34,7 @@ Vertex Pipelines makes it very straightforward to construct a workflow to suppor
 
 You can see that the model deployment step is wrapped by a conditional: the model will only be deployed if the evaluation step indicates that it is sufficiently accurate.
 
-For this example, nearly all the _components_ (steps) in the pipeline are prebuilt [Google Cloud Pipeline Components][14].  This means that we (mostly) just need to specify how the pipeline is put together using pre-existing building blocks.
+For this [example][18], nearly all the _components_ (steps) in the pipeline are prebuilt [Google Cloud Pipeline Components][14].  This means that we (mostly) just need to specify how the pipeline is put together using pre-existing building blocks.
 However, I’ll add one Python function-based _custom component_ for model evaluation and metrics visualization.
 The pipeline definition looks as follows (with a bit of detail elided):
 
@@ -192,7 +192,7 @@ model_eval_task = classif_model_eval_metrics(
 )
 ```
 
-The example notebook has the full component definition.
+The [example notebook][18] has the full component definition.
 
 ### Sharing component specifications
 
@@ -241,7 +241,7 @@ The tracking information shown is not necessarily  just for a single pipeline ru
 
 ## What’s next?
 
-This post introduced Vertex Pipelines, and the prebuilt [Google Cloud Pipeline Components][20], which allow easy access to Vertex AI services.   The Pipelines example in this post uses the AutoML Tabular service, showing how straightforward it is to bring your own data to train a model. It showed a pipeline that creates a Dataset, trains a model using that dataset, obtains the model’s evaluation metrics, and decides whether or not to deploy the model to Vertex AI for serving.
+This post introduced Vertex Pipelines, and the prebuilt [Google Cloud Pipeline Components][20], which allow easy access to Vertex AI services.   The Pipelines [example][18] in this post uses the AutoML Tabular service, showing how straightforward it is to bring your own data to train a model. It showed a pipeline that creates a Dataset, trains a model using that dataset, obtains the model’s evaluation metrics, and decides whether or not to deploy the model to Vertex AI for serving.
 
 For next steps, check out [other Vertex Pipelines example notebooks][21] as well as a [codelab][22] based in part on the pipeline in this post.
 You  can also find other Vertex AI notebook examples [here][23] and [here][24].
