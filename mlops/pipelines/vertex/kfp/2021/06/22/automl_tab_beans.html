@@ -180,7 +180,8 @@ window.onload = wrap_img;
 However, I’ll add one Python function-based <em>custom component</em> for model evaluation and metrics visualization.
 The pipeline definition looks as follows (with a bit of detail elided):</p>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">kfp</span><span class="o">.</span><span class="n">dsl</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">"automl-tab-beans-training-v2"</span><span class="p">,</span> <span class="n">pipeline_root</span><span class="o">=</span><span class="n">PIPELINE_ROOT</span><span class="p">)</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">kfp</span><span class="o">.</span><span class="n">dsl</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">"automl-tab-beans-training-v2"</span><span class="p">,</span>
+                  <span class="n">pipeline_root</span><span class="o">=</span><span class="n">PIPELINE_ROOT</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span>
     <span class="n">bq_source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s">"bq://aju-dev-demos.beans.beans1"</span><span class="p">,</span>
     <span class="n">display_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DISPLAY_NAME</span><span class="p">,</span>
@@ -336,7 +337,7 @@ The next section goes into more detail about how this custom ‘eval metrics’ 
 <a class="anchor" href="#sharing-component-specifications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sharing component specifications</h3>
 
 <p>When the component is compiled, we can also indicate that a <code class="highlighter-rouge">yaml</code> component specification be generated.  We did this via the optional  <code class="highlighter-rouge">output_component_file="tables_eval_component.yaml"</code> arg passed to the <code class="highlighter-rouge">@component</code> decorator.
-The <code class="highlighter-rouge">yaml</code> format allows the pipeline specification to be put under version control and shared with others.</p>
+The <code class="highlighter-rouge">yaml</code> format allows the component specification to be put under version control and shared with others.</p>
 
 <p>Then, the component can be used in other pipelines by calling the <a href="https://www.kubeflow.org/docs/components/pipelines/sdk/component-development/#using-your-component-in-a-pipeline"><code class="highlighter-rouge">kfp.components.load_component_from_url</code> function</a> (and other variants like <code class="highlighter-rouge">load_component_from_file</code>).</p>
 
@@ -347,7 +348,7 @@ The <code class="highlighter-rouge">yaml</code> format allows the pipeline speci
 The <a href="https://github.com/GoogleCloudPlatform/ai-platform-samples/blob/master/ai-platform-unified/notebooks/official/pipelines/automl_tabular_classification_beans.ipynb">example notebook</a> shows the details of how to do this.</p>
 
 <p>Once a pipeline is running, you can view its details in the Cloud Console, including the pipeline run and lineage graphs shown above, as well as pipeline step logs and pipeline Artifact details.
-You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to clone pipeline runs.</p>
+You can also submit pipeline job specs via the Cloud Console UI, and the UI makes it easy to clone pipeline runs. The json pipeline specification file may also be put under version control and shared with others.</p>
 
 <h3 id="leveraging-pipeline-step-caching-to-develop-and-debug">
 <a class="anchor" href="#leveraging-pipeline-step-caching-to-develop-and-debug" aria-hidden="true"><span class="octicon octicon-link"></span></a>Leveraging Pipeline step caching to develop and debug</h3>
